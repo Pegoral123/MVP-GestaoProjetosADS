@@ -1,0 +1,17 @@
+# Framework Base
+Django>=4.2,<5.0
+djangorestframework>=3.14.0
+
+# Banco de Dados 
+mysqlclient>=2.2.0
+
+# Documentação da API
+drf-spectacular>=0.26.0
+
+# Autenticação e Segurança
+djangorestframework-simplejwt>=5.3.0
+django-cors-headers>=4.3.0
+
+# Auxiliar 
+python-dotenv>=1.0.0
+pylint>=3.0.0
