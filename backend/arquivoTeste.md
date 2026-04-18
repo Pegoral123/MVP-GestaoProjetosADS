@@ -1,1 +1,0 @@
-Arquivo criado somente para ter algo na parta backend. Pois o git não aceita pastas vazias.
