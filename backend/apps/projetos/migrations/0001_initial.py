@@ -16,14 +16,79 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Projeto',
             fields=[
-                ('id', models.AutoField(help_text='Identificador único do projeto', primary_key=True, serialize=False, verbose_name='ID')),
-                ('titulo', models.CharField(help_text='Título do projeto', max_length=150, verbose_name='Título')),
-                ('descricao', models.TextField(blank=True, help_text='Descrição detalhada do projeto', null=True, verbose_name='Descrição')),
-                ('link_github', models.URLField(help_text='Link do repositório GitHub do projeto', max_length=500, verbose_name='Link do Repositório')),
-                ('status', models.CharField(choices=[('ATIVO', 'Ativo'), ('INATIVO', 'Inativo')], default='ATIVO', help_text='Status do projeto (ativo ou inativo)', max_length=20, verbose_name='Status')),
-                ('criado_em', models.DateTimeField(auto_now_add=True, help_text='Data e hora de criação do projeto', verbose_name='Criado em')),
-                ('atualizado_em', models.DateTimeField(auto_now=True, help_text='Data e hora da última atualização', verbose_name='Atualizado em')),
-                ('grupo', models.ForeignKey(help_text='Grupo responsável pelo projeto', on_delete=django.db.models.deletion.PROTECT, related_name='projetos', to='grupos.grupo', verbose_name='Grupo')),
+                (
+                    'id',
+                    models.AutoField(
+                        help_text='Identificador único do projeto',
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'titulo',
+                    models.CharField(
+                        help_text='Título do projeto',
+                        max_length=150,
+                        verbose_name='Título',
+                    ),
+                ),
+                (
+                    'descricao',
+                    models.TextField(
+                        blank=True,
+                        help_text='Descrição detalhada do projeto',
+                        null=True,
+                        verbose_name='Descrição',
+                    ),
+                ),
+                (
+                    'link_github',
+                    models.URLField(
+                        help_text='Link do repositório GitHub do projeto',
+                        max_length=500,
+                        verbose_name='Link do Repositório',
+                    ),
+                ),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('ATIVO', 'Ativo'),
+                            ('INATIVO', 'Inativo'),
+                        ],
+                        default='ATIVO',
+                        help_text='Status do projeto (ativo ou inativo)',
+                        max_length=20,
+                        verbose_name='Status',
+                    ),
+                ),
+                (
+                    'criado_em',
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text='Data e hora de criação do projeto',
+                        verbose_name='Criado em',
+                    ),
+                ),
+                (
+                    'atualizado_em',
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text='Data e hora da última atualização',
+                        verbose_name='Atualizado em',
+                    ),
+                ),
+                (
+                    'grupo',
+                    models.ForeignKey(
+                        help_text='Grupo responsável pelo projeto',
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='projetos',
+                        to='grupos.grupo',
+                        verbose_name='Grupo',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['-criado_em'],

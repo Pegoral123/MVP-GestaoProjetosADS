@@ -18,14 +18,81 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Aluno',
             fields=[
-                ('id', models.AutoField(help_text='Identificador único do aluno', primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(help_text='Nome completo do aluno', max_length=100, verbose_name='Nome Completo')),
-                ('email', models.EmailField(help_text='Endereço de email único do aluno', max_length=150, unique=True, verbose_name='Email')),
-                ('matricula', models.CharField(help_text='Número de matrícula único do aluno', max_length=8, unique=True, verbose_name='Matrícula')),
-                ('criado_em', models.DateTimeField(auto_now_add=True, help_text='Data e hora de criação do registro', verbose_name='Criado em')),
-                ('atualizado_em', models.DateTimeField(auto_now=True, help_text='Data e hora da última atualização', verbose_name='Atualizado em')),
-                ('grupo', models.ForeignKey(blank=True, help_text='Grupo ao qual o aluno pertence', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='alunos', to='grupos.grupo', verbose_name='Grupo')),
-                ('usuario', models.OneToOneField(blank=True, help_text='Liga o dado acadêmico à conta de login', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='aluno', to=settings.AUTH_USER_MODEL, verbose_name='Usuário')),
+                (
+                    'id',
+                    models.AutoField(
+                        help_text='Identificador único do aluno',
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'nome',
+                    models.CharField(
+                        help_text='Nome completo do aluno',
+                        max_length=100,
+                        verbose_name='Nome Completo',
+                    ),
+                ),
+                (
+                    'email',
+                    models.EmailField(
+                        help_text='Endereço de email único do aluno',
+                        max_length=150,
+                        unique=True,
+                        verbose_name='Email',
+                    ),
+                ),
+                (
+                    'matricula',
+                    models.CharField(
+                        help_text='Número de matrícula único do aluno',
+                        max_length=8,
+                        unique=True,
+                        verbose_name='Matrícula',
+                    ),
+                ),
+                (
+                    'criado_em',
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text='Data e hora de criação do registro',
+                        verbose_name='Criado em',
+                    ),
+                ),
+                (
+                    'atualizado_em',
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text='Data e hora da última atualização',
+                        verbose_name='Atualizado em',
+                    ),
+                ),
+                (
+                    'grupo',
+                    models.ForeignKey(
+                        blank=True,
+                        help_text='Grupo ao qual o aluno pertence',
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='alunos',
+                        to='grupos.grupo',
+                        verbose_name='Grupo',
+                    ),
+                ),
+                (
+                    'usuario',
+                    models.OneToOneField(
+                        blank=True,
+                        help_text='Liga o dado acadêmico à conta de login',
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='aluno',
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name='Usuário',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['nome'],

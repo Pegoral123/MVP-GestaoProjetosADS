@@ -14,10 +14,40 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Grupo',
             fields=[
-                ('id', models.AutoField(help_text='Identificador único do grupo', primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(help_text='Nome do grupo do Grupo', max_length=100, unique=True, verbose_name='Nome')),
-                ('criado_em', models.DateTimeField(auto_now_add=True, help_text='Data e hora de criação do grupo', verbose_name='Criado em')),
-                ('atualizado_em', models.DateTimeField(auto_now=True, help_text='Data e hora da última atualização', verbose_name='Atualizado em')),
+                (
+                    'id',
+                    models.AutoField(
+                        help_text='Identificador único do grupo',
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'nome',
+                    models.CharField(
+                        help_text='Nome do grupo do Grupo',
+                        max_length=100,
+                        unique=True,
+                        verbose_name='Nome',
+                    ),
+                ),
+                (
+                    'criado_em',
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text='Data e hora de criação do grupo',
+                        verbose_name='Criado em',
+                    ),
+                ),
+                (
+                    'atualizado_em',
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text='Data e hora da última atualização',
+                        verbose_name='Atualizado em',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['nome'],
