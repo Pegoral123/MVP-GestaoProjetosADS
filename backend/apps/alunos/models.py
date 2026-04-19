@@ -35,6 +35,16 @@ class Aluno(models.Model):
         help_text="Número de matrícula único do aluno",
     )
 
+    usuario = models.OneToOneField(
+        "authentication.CustomUser",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="aluno",
+        verbose_name="Usuário",
+        help_text="Liga o dado acadêmico à conta de login",
+    )
+
     grupo = models.ForeignKey(
         "grupos.Grupo",
         on_delete=models.SET_NULL,
