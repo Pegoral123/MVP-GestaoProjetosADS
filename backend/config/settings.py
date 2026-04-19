@@ -13,6 +13,9 @@ DEBUG = True
 # URLs
 ROOT_URLCONF = 'config.urls'
 
+# Auth
+AUTH_USER_MODEL = 'authentication.CustomUser'
+
 # Apps
 INSTALLED_APPS = [
     'django.contrib.admin',
