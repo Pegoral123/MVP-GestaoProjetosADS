@@ -71,9 +71,6 @@ class Aluno(models.Model):
         ordering = ["nome"]
 
     def __str__(self) -> str:
-        """Representação em string do aluno."""
+        """Representação do aluno."""
         return f"{self.nome} ({self.matricula})"
 
-    def __repr__(self) -> str:
-        """Representação técnica do aluno."""
-        return f"<Aluno: {self.matricula} - {self.nome}>"
