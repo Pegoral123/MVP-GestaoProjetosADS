@@ -6,7 +6,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Definição da fonte Gotham (se você tiver o arquivo, adicione na pasta fonts) */
 @font-face {
   font-family: 'Gotham-Medium';
   src: url('../fonts/GOTHAM-MEDIUM.TTF') format('truetype');
@@ -15,16 +14,12 @@
 }
 
 :root {
-  /* Branding Unifeso */
   --primary: #006b64;
-  /* Verde Unifeso */
   --primary-foreground: #ffffff;
 
   --secondary: #E05B14;
-  /* Laranja Unifeso */
   --secondary-foreground: #ffffff;
 
-  /* Neutros e Texto */
   --background: #ffffff;
   --foreground: #333333;
   --card: #ffffff;
@@ -35,7 +30,6 @@
   --input: #e5e7eb;
   --ring: #006b64;
 
-  /* Fontes */
   --font-sans: 'Inter Variable', sans-serif;
   --font-heading: 'Gotham-Medium', 'Nunito Sans Variable', sans-serif;
 }
@@ -44,7 +38,6 @@
   --background: #16171d;
   --foreground: #f3f4f6;
   --primary: #008f85;
-  /* Versão mais clara do verde para modo escuro */
   --secondary: #E05B14;
   --card: #1f2028;
   --border: #2e303a;
@@ -55,7 +48,6 @@
   --font-sans: var(--font-sans);
   --font-heading: var(--font-heading);
 
-  /* Mapeamento para o Tailwind */
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -107,7 +99,6 @@
   }
 }
 
-/* Animação de entrada: slide de cima para baixo */
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -124,7 +115,6 @@
   animation: slideDown 0.7s ease-out forwards;
 }
 
-/* Logo aparece depois do card (delay de 0.5s) */
 .animate-slide-down-delayed {
   opacity: 0;
   animation: slideDown 0.7s ease-out 0.5s forwards;

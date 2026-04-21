@@ -15,7 +15,7 @@ function FormLogin() {
 
     return (
 
-        <div className="flex flex-col items-center justify-center p-4 bg-[#006b64] max-w-80 rounded-md">
+        <div className="flex flex-col items-center justify-center p-4 bg-[#006b64] max-w-80 rounded-md animate-slide-down">
             <h1 className="text-2xl font-light text-white uppercase mb-4 mt-0"> Gestão de Projetos </h1>
             <form onSubmit={handleLogin} className="flex flex-col gap-4 ">
 
