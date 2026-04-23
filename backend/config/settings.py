@@ -87,7 +87,7 @@ DATABASES = {
     }
 }
 
-PECTACULAR_SETTINGS = {
+SPECTACULAR_SETTINGS = {
     "TITLE": "Gerenciamento MVP API",
     "DESCRIPTION": "API do sistema de gerenciamento de projetos ADS",
     "VERSION": "1.0.0",
