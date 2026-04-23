@@ -33,7 +33,7 @@ class AuthService:
                 nome=data["nome"],
                 matricula=data["matricula"],
                 email=data["email"],
-                usuario=user,  
+                usuario=user,
             )
 
         return user
