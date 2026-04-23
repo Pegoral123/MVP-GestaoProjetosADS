@@ -9,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema
 
 from apps.authentication.models import CustomUser
-from apps.authentication.permissions import IsAdmin
+from apps.authentication.permissions import IsAdmin, IsAdminOrProfessor
 from apps.authentication.serializers import (
     RegisterSerializer,
     UserReponseSerializer,
@@ -142,7 +142,7 @@ class UserListView(generics.ListAPIView):
     GET /api/v1/auth/users/
     """
 
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAdminOrProfessor]
     serializer_class = UserReponseSerializer
     queryset = CustomUser.objects.all().order_by("-date_joined")
 
