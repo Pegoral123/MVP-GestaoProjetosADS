@@ -30,7 +30,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',         
     'drf_spectacular',
     'corsheaders',
-    'apps.authentication',   # ← sobe para antes dos outros apps
+    'apps.authentication',   
     'apps.grupos',
     'apps.alunos',
     'apps.projetos',
@@ -40,7 +40,7 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     
-    # ← adiciona essas duas linhas
+   
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
