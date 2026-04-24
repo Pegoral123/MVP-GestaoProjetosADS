@@ -70,6 +70,8 @@ class RegisterSerializer(serializers.Serializer):
             raise serializers.ValidationError(msg)
         return value
 
+    # Validações cruzada dos campos
+
     def validate(self, data):
         if data.get("role") == "ALUNO":
             if not data.get("nome"):
