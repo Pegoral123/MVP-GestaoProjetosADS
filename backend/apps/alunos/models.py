@@ -28,21 +28,19 @@ class Aluno(models.Model):
         help_text="Endereço de email único do aluno",
     )
 
+    telefone = models.CharField(
+        max_length=15,
+        blank=True,
+        null=True,
+        verbose_name="Telefone",
+        help_text="Telefone do aluno (opcional)",
+    )
+
     matricula = models.CharField(
         max_length=8,
         unique=True,
         verbose_name="Matrícula",
         help_text="Número de matrícula único do aluno",
-    )
-
-    usuario = models.OneToOneField(
-        "authentication.CustomUser",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="aluno",
-        verbose_name="Usuário",
-        help_text="Liga o dado acadêmico à conta de login",
     )
 
     grupo = models.ForeignKey(
@@ -73,4 +71,3 @@ class Aluno(models.Model):
     def __str__(self) -> str:
         """Representação do aluno."""
         return f"{self.nome} ({self.matricula})"
-
