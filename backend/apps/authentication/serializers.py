@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from apps.authentication.models import CustomUser
-from apps.alunos.models import Aluno
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -26,27 +25,12 @@ class RegisterSerializer(serializers.Serializer):
         help_text="Senha com no mínimo 8 caracteres",
     )
 
-    role = serializers.ChoiceField(
-        choices=CustomUser.ROLE_CHOICES,
-        help_text="Papel do usuário: ADMIN, PROFESSOR ou ALUNO",
-    )
-
-    # Campos exclusivos para ALUNO
-    nome = serializers.CharField(
-        max_length=255,
-        required=False,
-        help_text="Nome completo do aluno (obrigatório para role ALUNO)",
-    )
-
-    matricula = serializers.CharField(
-        max_length=8,
-        required=False,
-        help_text="Matrícula única (obrigatório para ALUNO)",
-    )
-
     # Validações de campo único
-
     def validate_username(self, value):
+        if len(value) < 3:
+            raise serializers.ValidationError(
+                "Username deve ter no mínimo 3 caracteres."
+            )
         if CustomUser.objects.filter(username=value).exists():
             raise serializers.ValidationError("Username já está em uso.")
         return value
@@ -54,11 +38,6 @@ class RegisterSerializer(serializers.Serializer):
     def validate_email(self, value):
         if CustomUser.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email já está em uso.")
-        return value
-
-    def validate_matricula(self, value):
-        if value and Aluno.objects.filter(matricula=value).exists():
-            raise serializers.ValidationError("Matrícula já está em uso.")
         return value
 
     def validate_password(self, value):
@@ -70,20 +49,6 @@ class RegisterSerializer(serializers.Serializer):
             raise serializers.ValidationError(msg)
         return value
 
-    # Validações cruzada dos campos
-
-    def validate(self, data):
-        if data.get("role") == "ALUNO":
-            if not data.get("nome"):
-                raise serializers.ValidationError(
-                    {"nome": "Nome é obrigatório para alunos."}
-                )
-            if not data.get("matricula"):
-                raise serializers.ValidationError(
-                    {"matricula": "Matrícula é obrigatória para alunos."}
-                )
-        return data
-    
 
 class UserReponseSerializer(serializers.ModelSerializer):
 
@@ -93,5 +58,23 @@ class UserReponseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ("id", "username", "email", "role")
+        fields = ("id", "username", "email")
         read_only_fields = fields
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    senha_atual = serializers.CharField(
+        write_only=True,
+        help_text="Senha atual do usuário",
+    )
+    nova_senha = serializers.CharField(
+        min_length=8,
+        write_only=True,
+        help_text="Nova senha com no mínimo 8 caracteres",
+    )
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(
+        help_text="Refresh token para invalidar"
+    )
