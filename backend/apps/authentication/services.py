@@ -2,8 +2,6 @@
 
 from django.db import transaction
 from rest_framework import serializers
-
-from apps.alunos.models import Aluno
 from apps.authentication.models import CustomUser
 
 
@@ -14,8 +12,7 @@ class AuthService:
     def registrar_usuario(data: dict) -> CustomUser:
 
         """
-        Cria o CustomUser e, se role for ALUNO,
-        cria o Aluno vinculado ao usuário.
+        Cria acesso para o professor
         """
 
         # Cria o login
@@ -23,18 +20,7 @@ class AuthService:
             username=data["username"],
             email=data["email"],
             password=data["password"],
-            role=data["role"],
         )
-
-        # 2. Se for ALUNO, cria o registro acadêmico e vincula
-        if data["role"] == "ALUNO":
-            # noinspection PyUnresolvedReference
-            Aluno.objects.create(
-                nome=data["nome"],
-                matricula=data["matricula"],
-                email=data["email"],
-                usuario=user,
-            )
 
         return user
 
