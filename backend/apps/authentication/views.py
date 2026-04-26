@@ -1,7 +1,7 @@
 # apps/authentication/views.py
 
 from rest_framework import generics, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -9,10 +9,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema
 
 from apps.authentication.models import CustomUser
-from apps.authentication.permissions import IsAdmin, IsAdminOrProfessor
 from apps.authentication.serializers import (
     RegisterSerializer,
     UserReponseSerializer,
+    ChangePasswordSerializer,
+    LogoutSerializer
 )
 from apps.authentication.services import AuthService
 
@@ -20,11 +21,10 @@ from apps.authentication.services import AuthService
 class RegisterView(APIView):
     """
     Endpoint para registro de novos usuários.
-    Somente ADMIN pode registrar usuários.
     POST /api/v1/auth/register/
     """
 
-    permission_classes = [IsAdmin]
+    permission_classes = [AllowAny]
 
     @extend_schema(request=RegisterSerializer, responses=UserReponseSerializer)
     def post(self, request):
@@ -60,7 +60,7 @@ class LogoutView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=None, responses={200: None})
+    @extend_schema(request=LogoutSerializer, responses={200: None})
     def post(self, request):
         refresh_token = request.data.get("refresh")
 
@@ -104,7 +104,7 @@ class ChangePasswordView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=None, responses={200: None})
+    @extend_schema(request=ChangePasswordSerializer, responses={200: None})
     def patch(self, request):
         data = {
             "senha_atual": request.data.get("senha_atual"),
@@ -142,7 +142,7 @@ class UserListView(generics.ListAPIView):
     GET /api/v1/auth/users/
     """
 
-    permission_classes = [IsAdminOrProfessor]
+    permission_classes = [IsAuthenticated]
     serializer_class = UserReponseSerializer
     queryset = CustomUser.objects.all().order_by("-date_joined")
 
@@ -154,7 +154,7 @@ class DeactivateUserView(APIView):
     DELETE /api/v1/auth/users/{id}/
     """
 
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAuthenticated]
      
     @extend_schema(responses={200: None})
     def delete(self, request, pk):
