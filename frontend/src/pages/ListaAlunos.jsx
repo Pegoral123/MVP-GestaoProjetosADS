@@ -109,14 +109,16 @@ function ListaAlunos() {
                         </span>
                     </div>
 
-                    <div className="relative w-full sm:w-72">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30 w-full sm:w-80">
+                        <div className="bg-[#006b64] p-2.5">
+                            <Search className="text-white" size={16} />
+                        </div>
                         <input
                             type="text"
                             placeholder="Buscar por nome ou matrícula..."
                             value={busca}
                             onChange={(e) => setBusca(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#006b64]/30 focus:border-[#006b64] transition-all bg-white"
+                            className="flex-1 px-3 py-2 text-sm border-0 outline-none focus:ring-0 bg-white w-full"
                         />
                     </div>
                 </div>
