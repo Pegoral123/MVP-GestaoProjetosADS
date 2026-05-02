@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, UserPlus, Search, Users } from "lucide-react"
+import { ArrowLeft, UserPlus, Search, Users, LogOut, User } from "lucide-react"
 import { Button } from "../components/ui/button"
 import AlunoCard from "../components/alunos/AlunoCard"
 import AlunoModal from "../components/alunos/AlunoModal"
+import { useAuth } from "../context/AuthContext"
 
 // Dados mock
 const ALUNOS_MOCK = [
@@ -32,6 +33,7 @@ const ALUNOS_MOCK = [
 
 function ListaAlunos() {
     const navigate = useNavigate()
+    const { logout } = useAuth()
     const [busca, setBusca] = useState("")
     const [alunoSelecionado, setAlunoSelecionado] = useState(null)
     const [alunos, setAlunos] = useState([])
@@ -85,13 +87,31 @@ function ListaAlunos() {
                             <h1 className="text-lg font-semibold tracking-wide">Alunos</h1>
                         </div>
                     </div>
-                    <Button
-                        onClick={() => navigate("/alunos/cadastro")}
-                        className="bg-white text-[#006b64] hover:bg-white/90 font-semibold text-sm px-4 py-2 cursor-pointer"
-                    >
-                        <UserPlus size={16} className="mr-1" />
-                        Novo Aluno
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={() => navigate("/alunos/cadastro")}
+                            className="bg-white text-[#006b64] hover:bg-white/90 font-semibold text-sm px-4 py-2 cursor-pointer"
+                        >
+                            <UserPlus size={16} className="mr-1" />
+                            Novo Aluno
+                        </Button>
+                        <Button
+                            onClick={() => navigate("/perfil")}
+                            variant="ghost"
+                            className="text-white/80 hover:text-white hover:bg-white/20 font-semibold text-sm px-4 py-2 cursor-pointer transition-transform hover:scale-105"
+                        >
+                            <User size={16} className="mr-1" />
+                            Perfil
+                        </Button>
+                        <Button
+                            onClick={logout}
+                            variant="ghost"
+                            className="text-white/80 hover:text-white hover:bg-white/20 font-semibold text-sm px-4 py-2 cursor-pointer transition-transform hover:scale-105"
+                        >
+                            <LogOut size={16} className="mr-1" />
+                            Sair
+                        </Button>
+                    </div>
                 </div>
             </header>
 

@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Users, Plus, Search, Calendar, Layers, Hash, FolderX } from "lucide-react"
+import { ArrowLeft, Users, Plus, Search, Calendar, Layers, Hash, FolderX, LogOut, User } from "lucide-react"
 import { Button } from "../components/ui/button"
 import GrupoModal from "../components/grupos/GrupoModal"
+import { useAuth } from "../context/AuthContext"
 
 function ListaGrupos() {
     const navigate = useNavigate()
+    const { logout } = useAuth()
     const [grupos, setGrupos] = useState([])
     const [grupoSelecionado, setGrupoSelecionado] = useState(null)
 
@@ -148,13 +150,31 @@ function ListaGrupos() {
                             <h1 className="text-lg font-semibold tracking-wide">Grupos & Equipes</h1>
                         </div>
                     </div>
-                    <Button
-                        onClick={() => navigate("/grupos/cadastro")}
-                        className="bg-white text-[#006b64] hover:bg-white/90 font-semibold text-sm px-4 py-2 cursor-pointer shadow-sm transition-transform hover:scale-105"
-                    >
-                        <Plus size={16} className="mr-1" />
-                        Novo Grupo
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={() => navigate("/grupos/cadastro")}
+                            className="bg-white text-[#006b64] hover:bg-white/90 font-semibold text-sm px-4 py-2 cursor-pointer shadow-sm transition-transform hover:scale-105"
+                        >
+                            <Plus size={16} className="mr-1" />
+                            Novo Grupo
+                        </Button>
+                        <Button
+                            onClick={() => navigate("/perfil")}
+                            variant="ghost"
+                            className="text-white/80 hover:text-white hover:bg-white/20 font-semibold text-sm px-4 py-2 cursor-pointer transition-transform hover:scale-105"
+                        >
+                            <User size={16} className="mr-1" />
+                            Perfil
+                        </Button>
+                        <Button
+                            onClick={logout}
+                            variant="ghost"
+                            className="text-white/80 hover:text-white hover:bg-white/20 font-semibold text-sm px-4 py-2 cursor-pointer transition-transform hover:scale-105"
+                        >
+                            <LogOut size={16} className="mr-1" />
+                            Sair
+                        </Button>
+                    </div>
                 </div>
             </header>
 

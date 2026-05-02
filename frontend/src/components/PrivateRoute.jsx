@@ -1,7 +1,8 @@
 import { Navigate, Outlet } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 function PrivateRoute() {
-    const isAuthenticated = !!localStorage.getItem('token')
+    const { isAuthenticated } = useAuth()
 
     return isAuthenticated ? <Outlet /> : <Navigate to="/" />
 }
