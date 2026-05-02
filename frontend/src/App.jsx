@@ -4,6 +4,7 @@ import ListaAlunos from './pages/ListaAlunos'
 import CadastroAluno from './pages/CadastroAluno'
 import CadastroGrupo from './pages/CadastroGrupo'
 import ListaGrupos from './pages/ListaGrupos'
+import VincularProjeto from './pages/VincularProjeto'
 import PrivateRoute from './components/PrivateRoute'
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
       <Route path="/grupos" element={<ListaGrupos />} />
       <Route path="/grupos/cadastro" element={<CadastroGrupo />} />
       <Route path="/grupos/editar/:id" element={<CadastroGrupo />} />
+      <Route path="/grupos/:id/vincular-projeto" element={<VincularProjeto />} />
 
       {/* Rotas privadas */}
       <Route element={<PrivateRoute />}>
