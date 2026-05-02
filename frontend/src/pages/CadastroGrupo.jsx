@@ -2,7 +2,23 @@ import { useRef, useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
-import { ArrowLeft, Users, X, Hash, Save, Eraser, Calendar, Layers, Search } from "lucide-react"
+import { ArrowLeft, Users, X, Hash, Save, Eraser, Calendar, Layers, Search, FolderOpen, FolderGit2, ChevronDown, CheckCircle } from "lucide-react"
+
+// Lista estática de projetos mock (mesma do VincularProjeto)
+const PROJETOS_MOCK = [
+    "Sistema de Gestão Acadêmica",
+    "E-commerce MVP",
+    "App de Delivery",
+    "Plataforma de Ensino Online",
+    "Sistema de Agendamento Médico",
+    "App de Controle Financeiro",
+    "Rede Social para Estudantes",
+    "Sistema de Biblioteca Digital",
+    "App de Monitoramento de Saúde",
+    "Plataforma de Freelancers",
+    "Sistema de Gestão de Projetos",
+    "App de Receitas Culinárias",
+]
 
 function CadastroGrupo() {
     const navigate = useNavigate()
@@ -14,12 +30,19 @@ function CadastroGrupo() {
     const anoRef = useRef(null)
     const periodoRef = useRef(null)
     const mvpRef = useRef(null)
+    const dropdownRef = useRef(null)
 
     const [alunos, setAlunos] = useState([])
     const [selectedAlunos, setSelectedAlunos] = useState([])
     const [buscaAluno, setBuscaAluno] = useState("")
     const [errors, setErrors] = useState({})
     const [successMsg, setSuccessMsg] = useState("")
+
+    // Campos de projeto
+    const [projetoSelecionado, setProjetoSelecionado] = useState("")
+    const [githubUrl, setGithubUrl] = useState("")
+    const [buscaProjeto, setBuscaProjeto] = useState("")
+    const [dropdownAberto, setDropdownAberto] = useState(false)
 
     useEffect(() => {
         const storedAlunos = localStorage.getItem("alunos_mock")
@@ -38,10 +61,22 @@ function CadastroGrupo() {
                     if (periodoRef.current) periodoRef.current.value = grupoEdit.periodo || ""
                     if (mvpRef.current) mvpRef.current.value = grupoEdit.mvp || ""
                     setSelectedAlunos(grupoEdit.alunos || [])
+                    setProjetoSelecionado(grupoEdit.projeto || "")
+                    setGithubUrl(grupoEdit.githubUrl || "")
                 }
             }
         }
     }, [id])
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+                setDropdownAberto(false)
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside)
+        return () => document.removeEventListener("mousedown", handleClickOutside)
+    }, [])
 
     const handleAlunoToggle = (alunoId) => {
         setSelectedAlunos(prev =>
@@ -54,6 +89,10 @@ function CadastroGrupo() {
     const alunosFiltrados = alunos.filter(a =>
         a.nome.toLowerCase().includes(buscaAluno.toLowerCase()) ||
         a.matricula.includes(buscaAluno)
+    )
+
+    const projetosFiltrados = PROJETOS_MOCK.filter((p) =>
+        p.toLowerCase().includes(buscaProjeto.toLowerCase())
     )
 
     const validate = () => {
@@ -72,6 +111,9 @@ function CadastroGrupo() {
         if (!periodo) newErrors.periodo = "Período é obrigatório."
         if (!mvp) newErrors.mvp = "MVP é obrigatório."
         if (selectedAlunos.length === 0) newErrors.alunos = "Selecione ao menos um aluno."
+        if (githubUrl.trim() && !githubUrl.match(/^https?:\/\/(www\.)?github\.com\/.+/i)) {
+            newErrors.github = "Informe um link válido do GitHub (ex: https://github.com/usuario/repo)."
+        }
 
         const storedGrupos = localStorage.getItem("grupos_mock")
         let gruposMock = storedGrupos ? JSON.parse(storedGrupos) : []
@@ -102,6 +144,8 @@ function CadastroGrupo() {
             periodo: periodoRef.current.value,
             mvp: mvpRef.current.value,
             alunos: selectedAlunos,
+            projeto: projetoSelecionado || undefined,
+            githubUrl: githubUrl.trim() || undefined,
         }
 
         const storedGrupos = localStorage.getItem("grupos_mock")
@@ -131,6 +175,8 @@ function CadastroGrupo() {
         if (periodoRef.current) periodoRef.current.value = ""
         if (mvpRef.current) mvpRef.current.value = ""
         setSelectedAlunos([])
+        setProjetoSelecionado("")
+        setGithubUrl("")
         setErrors({})
         setSuccessMsg("")
     }
@@ -157,7 +203,7 @@ function CadastroGrupo() {
             </header>
 
             <main className="flex-1 flex items-start justify-center px-4 py-10">
-                <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8">
+                <div className="w-full max-w-[886px] bg-white rounded-2xl shadow-lg p-8">
 
                     <div className="flex items-center gap-3 mb-6">
                         <div className="bg-[#006b64] p-2 rounded-lg">
@@ -315,6 +361,121 @@ function CadastroGrupo() {
                                 )}
                             </div>
                             {errors.alunos && <p className="text-red-500 text-xs mt-1">{errors.alunos}</p>}
+                        </div>
+
+                        {/* Separador visual do Projeto */}
+                        <div className="border-t border-gray-200 pt-5 mt-2">
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="bg-[#006b64]/10 p-1.5 rounded-lg">
+                                    <FolderOpen size={18} className="text-[#006b64]" />
+                                </div>
+                                <h3 className="text-base font-bold text-gray-700">Projeto Vinculado</h3>
+                                <span className="text-xs text-gray-400 ml-1">(opcional)</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-1 gap-5">
+                                {/* Dropdown de Projeto com busca */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Projeto
+                                    </label>
+                                    <div className="relative" ref={dropdownRef}>
+                                        {/* Botão do dropdown */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setDropdownAberto(!dropdownAberto)}
+                                            className="w-full flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30 cursor-pointer"
+                                        >
+                                            <div className="bg-[#006b64] p-3">
+                                                <FolderOpen className="text-white" size={18} />
+                                            </div>
+                                            <span className={`flex-1 px-3 py-2.5 text-sm text-left ${projetoSelecionado ? "text-gray-800" : "text-gray-400"}`}>
+                                                {projetoSelecionado || "Selecione um projeto..."}
+                                            </span>
+                                            <ChevronDown size={16} className={`mr-3 text-gray-400 transition-transform ${dropdownAberto ? "rotate-180" : ""}`} />
+                                        </button>
+
+                                        {/* Lista dropdown */}
+                                        {dropdownAberto && (
+                                            <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-hidden flex flex-col">
+                                                {/* Busca */}
+                                                <div className="flex items-center border-b border-gray-200 px-3 py-2 gap-2">
+                                                    <Search size={16} className="text-gray-400 shrink-0" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Buscar projeto..."
+                                                        value={buscaProjeto}
+                                                        onChange={(e) => setBuscaProjeto(e.target.value)}
+                                                        className="flex-1 text-sm outline-none border-0 bg-transparent"
+                                                        autoFocus
+                                                    />
+                                                </div>
+
+                                                {/* Limpar seleção */}
+                                                {projetoSelecionado && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setProjetoSelecionado("")
+                                                            setDropdownAberto(false)
+                                                            setBuscaProjeto("")
+                                                        }}
+                                                        className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors border-b border-gray-100 cursor-pointer"
+                                                    >
+                                                        ✕ Remover projeto vinculado
+                                                    </button>
+                                                )}
+
+                                                {/* Itens */}
+                                                <div className="overflow-y-auto max-h-48">
+                                                    {projetosFiltrados.length === 0 ? (
+                                                        <p className="text-sm text-gray-400 text-center py-4">Nenhum projeto encontrado.</p>
+                                                    ) : (
+                                                        projetosFiltrados.map((projeto) => (
+                                                            <button
+                                                                key={projeto}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setProjetoSelecionado(projeto)
+                                                                    setDropdownAberto(false)
+                                                                    setBuscaProjeto("")
+                                                                }}
+                                                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#006b64]/5 transition-colors flex items-center justify-between cursor-pointer ${projetoSelecionado === projeto ? "bg-[#006b64]/10 text-[#006b64] font-semibold" : "text-gray-700"
+                                                                    }`}
+                                                            >
+                                                                <span>{projeto}</span>
+                                                                {projetoSelecionado === projeto && (
+                                                                    <CheckCircle size={16} className="text-[#006b64]" />
+                                                                )}
+                                                            </button>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Link do GitHub */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Link do Repositório GitHub
+                                    </label>
+                                    <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30">
+                                        <div className="bg-[#006b64] p-3">
+                                            <FolderGit2 className="text-white" size={18} />
+                                        </div>
+                                        <Input
+                                            type="url"
+                                            placeholder="https://github.com/usuario/repositorio"
+                                            value={githubUrl}
+                                            onChange={(e) => setGithubUrl(e.target.value)}
+                                            className="flex-1 border-0 shadow-none focus:ring-0"
+                                        />
+                                    </div>
+                                    {errors.github && <p className="text-red-500 text-xs mt-1">{errors.github}</p>}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Botões */}
