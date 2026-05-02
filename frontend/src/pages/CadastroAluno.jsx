@@ -46,9 +46,7 @@ function CadastroAluno() {
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             newErrors.email = "E-mail inválido."
         }
-        if (!celular) {
-            newErrors.celular = "Celular é obrigatório."
-        } else if (!/^\(?\d{2}\)?[\s-]?9?\d{4}[\s-]?\d{4}$/.test(celular)) {
+        if (celular && !/^\(?\d{2}\)?[\s-]?9?\d{4}[\s-]?\d{4}$/.test(celular)) {
             newErrors.celular = "Número inválido. Ex: (22) 99999-1234"
         }
 
@@ -225,7 +223,7 @@ function CadastroAluno() {
                         {/* Celular / WhatsApp */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Celular (WhatsApp) <span className="text-red-500">*</span>
+                                Celular (WhatsApp) <span className="text-gray-400 font-normal ml-1">(Opcional)</span>
                             </label>
                             <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30 focus-within:border-[#006b64] transition-all">
                                 <div className="bg-[#006b64] p-3">
