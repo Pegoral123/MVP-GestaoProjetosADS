@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, UserPlus, Search, Users, LogOut, User } from "lucide-react"
+import { ArrowLeft, UserPlus, Search, Users, LogOut, User, LayoutGrid } from "lucide-react"
 import { Button } from "../components/ui/button"
 import AlunoCard from "../components/alunos/AlunoCard"
 import AlunoModal from "../components/alunos/AlunoModal"
@@ -68,65 +68,32 @@ function ListaAlunos() {
         <section className="min-h-screen bg-gray-50 flex flex-col">
 
             {/* Header*/}
-            <header className="bg-[#006b64] text-white px-6 py-4 shadow-md w-full">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate("/dashboard")}
-                            type="button"
-                            className="text-white/80 hover:text-white hover:bg-white/20 px-2 cursor-pointer"
-                        >
-                            <ArrowLeft size={18} className="mr-1" />
-                            Voltar
-                        </Button>
-                        <div className="h-5 w-px bg-white/30 mx-1" />
+            <div className="mb-8">
+                <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <Users size={28} className="text-[#006b64]" />
+                    Gestão de Alunos
+                </h1>
+                <p className="text-gray-500 text-sm">Gerencie o cadastro de alunos matriculados no curso.</p>
+            </div>
+
+            {/* Main */}
+            <main className="flex-1 w-full">
+
+                {/* Stats + Busca */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                            <Users size={20} />
-                            <h1 className="text-lg font-semibold tracking-wide">Alunos</h1>
+                            <span className="bg-[#006b64]/10 text-[#006b64] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                                {alunosFiltrados.length} {alunosFiltrados.length === 1 ? "aluno" : "alunos"}
+                            </span>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-2">
                         <Button
                             onClick={() => navigate("/alunos/cadastro")}
-                            className="bg-white text-[#006b64] hover:bg-white/90 font-semibold text-sm px-4 py-2 cursor-pointer"
+                            className="bg-[#006b64] hover:bg-[#00524d] text-white font-semibold text-sm px-4 py-2 shadow-sm transition-transform hover:scale-105"
                         >
                             <UserPlus size={16} className="mr-1" />
                             Novo Aluno
                         </Button>
-                        <Button
-                            onClick={() => navigate("/perfil")}
-                            variant="ghost"
-                            className="text-white/80 hover:text-white hover:bg-white/20 font-semibold text-sm px-4 py-2 cursor-pointer transition-transform hover:scale-105"
-                        >
-                            <User size={16} className="mr-1" />
-                            Perfil
-                        </Button>
-                        <Button
-                            onClick={logout}
-                            variant="ghost"
-                            className="text-white/80 hover:text-white hover:bg-white/20 font-semibold text-sm px-4 py-2 cursor-pointer transition-transform hover:scale-105"
-                        >
-                            <LogOut size={16} className="mr-1" />
-                            Sair
-                        </Button>
-                    </div>
-                </div>
-            </header>
-
-            {/* Main */}
-            <main className="flex-1 w-full px-6 py-8">
-
-                {/* Stats + Busca */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-2">
-                        <span className="bg-[#006b64] text-white text-sm font-bold px-3 py-1 rounded-full">
-                            {alunosFiltrados.length}
-                        </span>
-                        <span className="text-gray-600 text-sm">
-                            {alunosFiltrados.length === 1 ? "aluno encontrado" : "alunos encontrados"}
-                        </span>
                     </div>
 
                     <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30 w-full sm:w-80">
