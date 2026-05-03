@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, User, Mail, ShieldCheck, UserPlus, Lock } from "lucide-react"
+import { ArrowLeft, User, Mail, ShieldCheck, UserPlus, Lock, LayoutGrid } from "lucide-react"
 import { Button } from "../components/ui/button"
 import api from "../services/api"
 import { useAuth } from "../context/AuthContext"
@@ -97,30 +97,16 @@ function Perfil() {
     return (
         <section className="min-h-screen bg-gray-50 flex flex-col">
             {/* Header */}
-            <header className="bg-[#006b64] text-white px-6 py-4 shadow-md w-full">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate("/dashboard")}
-                            type="button"
-                            className="text-white/80 hover:text-white hover:bg-white/20 px-2 cursor-pointer"
-                        >
-                            <ArrowLeft size={18} className="mr-1" />
-                            Voltar
-                        </Button>
-                        <div className="h-5 w-px bg-white/30 mx-1" />
-                        <div className="flex items-center gap-2">
-                            <ShieldCheck size={20} />
-                            <h1 className="text-lg font-semibold tracking-wide">Perfil e Administração</h1>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            <div className="mb-8">
+                <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <ShieldCheck size={28} className="text-[#006b64]" />
+                    Perfil e Administração
+                </h1>
+                <p className="text-gray-500 text-sm">Gerencie seus dados e cadastre novos administradores.</p>
+            </div>
 
             {/* Main */}
-            <main className="flex-1 w-full px-6 py-8 max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <main className="flex-1 w-full grid grid-cols-1 lg:grid-cols-2 gap-8">
 
                 {/* Coluna 1: Dados do Usuário e Alterar Senha */}
                 <div className="flex flex-col gap-8">

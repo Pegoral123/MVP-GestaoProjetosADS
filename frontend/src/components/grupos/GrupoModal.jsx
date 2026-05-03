@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { X, Hash, Edit, Trash2, AlertTriangle, Users, Calendar, Layers, FolderGit2, Link2, FolderOpen, ChevronDown } from "lucide-react"
+import { X, Hash, Edit, Trash2, AlertTriangle, Users, Calendar, Layers, FolderGit2, Link2, FolderOpen, ChevronDown, CheckCircle } from "lucide-react"
 import { Button } from "../ui/button"
 import { useNavigate } from "react-router-dom"
 
@@ -137,6 +137,20 @@ function GrupoModal({ grupo, onClose, onDelete }) {
                                 <p className="text-sm text-gray-700 font-semibold">{grupo.ano}</p>
                             </div>
                         </div>
+
+                        {temProjeto && (
+                            <div className={`flex items-center gap-3 p-3 rounded-xl border border-gray-100 ${grupo.status === 'Concluído' ? 'bg-green-50/50' : 'bg-blue-50/50'}`}>
+                                <div className={grupo.status === 'Concluído' ? 'bg-green-100 p-2 rounded-lg' : 'bg-blue-100 p-2 rounded-lg'}>
+                                    <CheckCircle size={16} className={grupo.status === 'Concluído' ? 'text-green-600' : 'text-blue-600'} />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 font-medium">Status</p>
+                                    <p className={`text-sm font-bold ${grupo.status === 'Concluído' ? 'text-green-700' : 'text-blue-700'}`}>
+                                        {grupo.status || "Em andamento"}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         <button
                             type="button"

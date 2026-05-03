@@ -1,72 +1,103 @@
-import { useRef, useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
-import { ArrowLeft, Users, X, Hash, Save, Eraser, Calendar, Layers, Search, FolderOpen, FolderGit2, ChevronDown, CheckCircle } from "lucide-react"
-
-// Lista estática de projetos mock (mesma do VincularProjeto)
-const PROJETOS_MOCK = [
-    "Sistema de Gestão Acadêmica",
-    "E-commerce MVP",
-    "App de Delivery",
-    "Plataforma de Ensino Online",
-    "Sistema de Agendamento Médico",
-    "App de Controle Financeiro",
-    "Rede Social para Estudantes",
-    "Sistema de Biblioteca Digital",
-    "App de Monitoramento de Saúde",
-    "Plataforma de Freelancers",
-    "Sistema de Gestão de Projetos",
-    "App de Receitas Culinárias",
-]
+import {
+    ArrowLeft,
+    Users,
+    X,
+    Hash,
+    Save,
+    Calendar,
+    Layers,
+    Search,
+    FolderOpen,
+    FolderGit2,
+    ChevronDown,
+    CheckCircle,
+    Info,
+    UserPlus,
+    Clock
+} from "lucide-react"
 
 function CadastroGrupo() {
     const navigate = useNavigate()
     const { id } = useParams()
-
-    const codigoRef = useRef(null)
-    const nomeRef = useRef(null)
-    const dataRef = useRef(null)
-    const anoRef = useRef(null)
-    const periodoRef = useRef(null)
-    const mvpRef = useRef(null)
+    const isEdit = !!id
     const dropdownRef = useRef(null)
 
+    const [formData, setFormData] = useState({
+        codigo: "",
+        nome: "",
+        data: new Date().toISOString().split('T')[0],
+        ano: new Date().getFullYear().toString(),
+        periodo: "",
+        mvp: "",
+        alunos: [],
+        projeto: "",
+        githubUrl: "",
+        status: "Em andamento"
+    })
+
     const [alunos, setAlunos] = useState([])
-    const [selectedAlunos, setSelectedAlunos] = useState([])
+    const [projetos, setProjetos] = useState([])
     const [buscaAluno, setBuscaAluno] = useState("")
+    const [buscaProjeto, setBuscaProjeto] = useState("")
+    const [dropdownAberto, setDropdownAberto] = useState(false)
     const [errors, setErrors] = useState({})
     const [successMsg, setSuccessMsg] = useState("")
 
-    // Campos de projeto
-    const [projetoSelecionado, setProjetoSelecionado] = useState("")
-    const [githubUrl, setGithubUrl] = useState("")
-    const [buscaProjeto, setBuscaProjeto] = useState("")
-    const [dropdownAberto, setDropdownAberto] = useState(false)
-
     useEffect(() => {
+        // Carregar alunos
         const storedAlunos = localStorage.getItem("alunos_mock")
         if (storedAlunos) setAlunos(JSON.parse(storedAlunos))
 
-        if (id) {
+        const staticProjetos = [
+            "Sistema de Gestão Acadêmica",
+            "E-commerce MVP",
+            "App de Delivery",
+            "Plataforma de Ensino Online",
+            "Sistema de Agendamento Médico",
+            "App de Controle Financeiro",
+            "Rede Social para Estudantes",
+            "Sistema de Biblioteca Digital",
+            "App de Monitoramento de Saúde",
+            "Plataforma de Freelancers",
+            "Sistema de Gestão de Projetos",
+            "App de Receitas Culinárias"
+        ]
+
+        const storedProjetos = localStorage.getItem("projetos_mock")
+        if (storedProjetos) {
+            const userProjetos = JSON.parse(storedProjetos).map(p => p.nome)
+            // Mesclar e remover duplicatas
+            const merged = Array.from(new Set([...userProjetos, ...staticProjetos]))
+            setProjetos(merged)
+        } else {
+            setProjetos(staticProjetos)
+        }
+
+        if (isEdit) {
             const storedGrupos = localStorage.getItem("grupos_mock")
             if (storedGrupos) {
                 const gruposMock = JSON.parse(storedGrupos)
                 const grupoEdit = gruposMock.find((g) => g.id.toString() === id)
                 if (grupoEdit) {
-                    if (codigoRef.current) codigoRef.current.value = grupoEdit.codigo || ""
-                    if (nomeRef.current) nomeRef.current.value = grupoEdit.nome || ""
-                    if (dataRef.current) dataRef.current.value = grupoEdit.data || ""
-                    if (anoRef.current) anoRef.current.value = grupoEdit.ano || ""
-                    if (periodoRef.current) periodoRef.current.value = grupoEdit.periodo || ""
-                    if (mvpRef.current) mvpRef.current.value = grupoEdit.mvp || ""
-                    setSelectedAlunos(grupoEdit.alunos || [])
-                    setProjetoSelecionado(grupoEdit.projeto || "")
-                    setGithubUrl(grupoEdit.githubUrl || "")
+                    setFormData({
+                        codigo: grupoEdit.codigo || "",
+                        nome: grupoEdit.nome || "",
+                        data: grupoEdit.data || "",
+                        ano: grupoEdit.ano || "",
+                        periodo: grupoEdit.periodo || "",
+                        mvp: grupoEdit.mvp || "",
+                        alunos: grupoEdit.alunos || [],
+                        projeto: grupoEdit.projeto || "",
+                        githubUrl: grupoEdit.githubUrl || "",
+                        status: grupoEdit.status || "Em andamento"
+                    })
                 }
             }
         }
-    }, [id])
+    }, [id, isEdit])
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -78,12 +109,79 @@ function CadastroGrupo() {
         return () => document.removeEventListener("mousedown", handleClickOutside)
     }, [])
 
+    const handleChange = (e) => {
+        const { name, value } = e.target
+        setFormData(prev => ({ ...prev, [name]: value }))
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: null }))
+        }
+    }
+
     const handleAlunoToggle = (alunoId) => {
-        setSelectedAlunos(prev =>
-            prev.includes(alunoId)
-                ? prev.filter(id => id !== alunoId)
-                : [...prev, alunoId]
-        )
+        setFormData(prev => {
+            const isSelected = prev.alunos.includes(alunoId)
+            const newAlunos = isSelected
+                ? prev.alunos.filter(id => id !== alunoId)
+                : [...prev.alunos, alunoId]
+            
+            if (errors.alunos) {
+                setErrors(e => ({ ...e, alunos: null }))
+            }
+            
+            return { ...prev, alunos: newAlunos }
+        })
+    }
+
+    const validate = () => {
+        const newErrors = {}
+        if (!formData.codigo.trim()) newErrors.codigo = "Código é obrigatório."
+        if (!formData.nome.trim()) newErrors.nome = "Nome é obrigatório."
+        if (!formData.data) newErrors.data = "Data é obrigatória."
+        if (!formData.ano) newErrors.ano = "Ano é obrigatório."
+        if (!formData.periodo) newErrors.periodo = "Período é obrigatório."
+        if (!formData.mvp) newErrors.mvp = "MVP é obrigatório."
+        if (formData.alunos.length === 0) newErrors.alunos = "Selecione ao menos um aluno."
+        if (formData.githubUrl && !formData.githubUrl.match(/^https?:\/\/(www\.)?github\.com\/.+/i)) {
+            newErrors.githubUrl = "Informe um link válido do GitHub."
+        }
+
+        const storedGrupos = localStorage.getItem("grupos_mock")
+        let gruposMock = storedGrupos ? JSON.parse(storedGrupos) : []
+        const isDuplicate = gruposMock.some(g => g.codigo === formData.codigo && g.id.toString() !== id)
+
+        if (formData.codigo && isDuplicate) {
+            newErrors.codigo = "Código da equipe já está em uso."
+        }
+
+        setErrors(newErrors)
+        return Object.keys(newErrors).length === 0
+    }
+
+    const handleSubmit = (e) => {
+        e.preventDefault()
+        if (!validate()) return
+
+        const payload = {
+            ...formData,
+            id: isEdit ? parseInt(id) : Date.now(),
+        }
+
+        const storedGrupos = localStorage.getItem("grupos_mock")
+        let gruposMock = storedGrupos ? JSON.parse(storedGrupos) : []
+
+        if (isEdit) {
+            const index = gruposMock.findIndex((g) => g.id.toString() === id)
+            if (index !== -1) gruposMock[index] = payload
+            setSuccessMsg(`Equipe "${payload.nome}" atualizada com sucesso!`)
+        } else {
+            gruposMock.push(payload)
+            setSuccessMsg(`Equipe "${payload.nome}" cadastrada com sucesso!`)
+        }
+
+        localStorage.setItem("grupos_mock", JSON.stringify(gruposMock))
+        setTimeout(() => {
+            navigate("/grupos")
+        }, 1500)
     }
 
     const alunosFiltrados = alunos.filter(a =>
@@ -91,410 +189,363 @@ function CadastroGrupo() {
         a.matricula.includes(buscaAluno)
     )
 
-    const projetosFiltrados = PROJETOS_MOCK.filter((p) =>
+    const projetosFiltrados = projetos.filter((p) =>
         p.toLowerCase().includes(buscaProjeto.toLowerCase())
     )
 
-    const validate = () => {
-        const newErrors = {}
-        const codigo = codigoRef.current?.value.trim()
-        const nome = nomeRef.current?.value.trim()
-        const data = dataRef.current?.value
-        const ano = anoRef.current?.value
-        const periodo = periodoRef.current?.value
-        const mvp = mvpRef.current?.value
-
-        if (!codigo) newErrors.codigo = "Código é obrigatório."
-        if (!nome) newErrors.nome = "Nome é obrigatório."
-        if (!data) newErrors.data = "Data é obrigatória."
-        if (!ano) newErrors.ano = "Ano é obrigatório."
-        if (!periodo) newErrors.periodo = "Período é obrigatório."
-        if (!mvp) newErrors.mvp = "MVP é obrigatório."
-        if (selectedAlunos.length === 0) newErrors.alunos = "Selecione ao menos um aluno."
-        if (githubUrl.trim() && !githubUrl.match(/^https?:\/\/(www\.)?github\.com\/.+/i)) {
-            newErrors.github = "Informe um link válido do GitHub (ex: https://github.com/usuario/repo)."
-        }
-
-        const storedGrupos = localStorage.getItem("grupos_mock")
-        let gruposMock = storedGrupos ? JSON.parse(storedGrupos) : []
-        const isDuplicate = gruposMock.some(g => g.codigo === codigo && g.id.toString() !== id)
-
-        if (codigo && isDuplicate) {
-            newErrors.codigo = "Código da equipe já está em uso."
-        }
-
-        return newErrors
-    }
-
-    const handleSubmit = (e) => {
-        e.preventDefault()
-        const validationErrors = validate()
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors)
-            return
-        }
-        setErrors({})
-
-        const payload = {
-            id: id ? parseInt(id) : Date.now(),
-            codigo: codigoRef.current.value.trim(),
-            nome: nomeRef.current.value.trim(),
-            data: dataRef.current.value,
-            ano: anoRef.current.value,
-            periodo: periodoRef.current.value,
-            mvp: mvpRef.current.value,
-            alunos: selectedAlunos,
-            projeto: projetoSelecionado || undefined,
-            githubUrl: githubUrl.trim() || undefined,
-        }
-
-        const storedGrupos = localStorage.getItem("grupos_mock")
-        let gruposMock = storedGrupos ? JSON.parse(storedGrupos) : []
-
-        if (id) {
-            const index = gruposMock.findIndex((g) => g.id.toString() === id)
-            if (index !== -1) gruposMock[index] = payload
-            setSuccessMsg(`Equipe atualizada com sucesso!`)
-        } else {
-            gruposMock.push(payload)
-            setSuccessMsg(`Equipe cadastrada com sucesso!`)
-        }
-
-        localStorage.setItem("grupos_mock", JSON.stringify(gruposMock))
-
-        setTimeout(() => {
-            navigate("/grupos")
-        }, 1500)
-    }
-
-    const handleLimpar = () => {
-        if (codigoRef.current) codigoRef.current.value = ""
-        if (nomeRef.current) nomeRef.current.value = ""
-        if (dataRef.current) dataRef.current.value = ""
-        if (anoRef.current) anoRef.current.value = ""
-        if (periodoRef.current) periodoRef.current.value = ""
-        if (mvpRef.current) mvpRef.current.value = ""
-        setSelectedAlunos([])
-        setProjetoSelecionado("")
-        setGithubUrl("")
-        setErrors({})
-        setSuccessMsg("")
-    }
-
     return (
-        <section className="min-h-screen bg-gray-50 flex flex-col ">
-            <header className="bg-[#006b64] text-white px-6 py-4 shadow-md">
-                <div className="max-w-4xl mx-auto flex items-center gap-3">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate("/grupos")}
-                        className="text-white/80 hover:text-white hover:bg-white/20 px-2"
-                        type="button"
-                    >
-                        <ArrowLeft size={18} className="mr-1" />
-                        Voltar
-                    </Button>
-                    <div className="h-5 w-px bg-white/30 mx-1" />
-                    <h1 className="text-lg font-semibold tracking-wide">
-                        {id ? "Editar Grupo" : "Cadastro de Grupo"}
-                    </h1>
-                </div>
-            </header>
+        <section className="min-h-screen bg-gray-50 flex flex-col">
+            <div className="mb-8">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate("/grupos")}
+                    className="text-gray-500 hover:text-[#006b64] hover:bg-[#006b64]/10 mb-4 px-2"
+                    type="button"
+                >
+                    <ArrowLeft size={18} className="mr-1" />
+                    Voltar para Equipes
+                </Button>
+                <h1 className="text-2xl font-bold text-gray-800">
+                    {isEdit ? "Edição de Equipe" : "Nova Equipe"}
+                </h1>
+                <p className="text-gray-500 text-sm">Organize os alunos e vincule projetos para acompanhamento do MVP.</p>
+            </div>
 
-            <main className="flex-1 flex items-start justify-center px-4 py-10">
-                <div className="w-full max-w-[886px] bg-white rounded-2xl shadow-lg p-8">
-
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="bg-[#006b64] p-2 rounded-lg">
-                            <Users className="text-white" size={22} />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-gray-800">{id ? "Editar Grupo" : "Novo Grupo"}</h2>
-                            <p className="text-sm text-gray-500">Preencha os dados da equipe do MVP.</p>
-                        </div>
-                    </div>
-
-                    {successMsg && (
-                        <div className="mb-5 bg-green-50 border border-green-300 text-green-700 rounded-lg px-4 py-3 text-sm flex items-center justify-between">
-                            <span>{successMsg}</span>
-                            <button onClick={() => setSuccessMsg("")} type="button">
-                                <X size={16} />
-                            </button>
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            {/* MVP */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Tipo de MVP <span className="text-red-500">*</span>
-                                </label>
-                                <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30">
-                                    <div className="bg-[#006b64] p-3"><Layers className="text-white" size={18} /></div>
-                                    <select ref={mvpRef} className="flex-1 p-2 border-0 focus:ring-0 text-sm outline-none bg-white">
-                                        <option value="">Selecione...</option>
-                                        <option value="Frontend">MVP Frontend</option>
-                                        <option value="Backend">MVP Backend</option>
-                                        <option value="Mobile">MVP Mobile</option>
-                                    </select>
+            <main className="flex-1 w-full">
+                <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div className="p-8 space-y-8">
+                        {/* Feedback de sucesso */}
+                        {successMsg && (
+                            <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-300">
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-green-100 p-1 rounded-full">
+                                        <Save size={14} />
+                                    </div>
+                                    <span className="font-medium">{successMsg}</span>
                                 </div>
-                                {errors.mvp && <p className="text-red-500 text-xs mt-1">{errors.mvp}</p>}
+                                <button onClick={() => setSuccessMsg("")} type="button" className="text-green-500 hover:text-green-700">
+                                    <X size={16} />
+                                </button>
                             </div>
+                        )}
 
-                            {/* Data */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Data de Criação <span className="text-red-500">*</span>
-                                </label>
-                                <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30">
-                                    <div className="bg-[#006b64] p-3"><Calendar className="text-white" size={18} /></div>
-                                    <Input type="date" ref={dataRef} className="flex-1 border-0 shadow-none focus:ring-0" />
+                        {/* Seção 1: Identificação */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 text-[#006b64] font-bold border-b border-gray-100 pb-2">
+                                <Info size={18} />
+                                <span>Identificação do Grupo</span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-1">
+                                    <label className="block text-sm font-semibold text-gray-700">Nome da Equipe <span className="text-red-500">*</span></label>
+                                    <div className="relative">
+                                        <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                        <input
+                                            type="text"
+                                            name="nome"
+                                            value={formData.nome}
+                                            onChange={handleChange}
+                                            placeholder="Ex: Alpha Team"
+                                            className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.nome ? 'border-red-500 bg-red-50' : 'border-gray-300'} outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64] transition-all`}
+                                        />
+                                    </div>
+                                    {errors.nome && <p className="text-xs text-red-500 font-medium">{errors.nome}</p>}
                                 </div>
-                                {errors.data && <p className="text-red-500 text-xs mt-1">{errors.data}</p>}
-                            </div>
-
-                            {/* Ano */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Ano <span className="text-red-500">*</span>
-                                </label>
-                                <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30">
-                                    <div className="bg-[#006b64] p-3"><Calendar className="text-white" size={18} /></div>
-                                    <select ref={anoRef} className="flex-1 p-2 border-0 focus:ring-0 text-sm outline-none bg-white">
-                                        <option value="">Selecione...</option>
-                                        <option value="2024">2024</option>
-                                        <option value="2025">2025</option>
-                                        <option value="2026">2026</option>
-                                    </select>
+                                <div className="space-y-1">
+                                    <label className="block text-sm font-semibold text-gray-700">Código da Equipe <span className="text-red-500">*</span></label>
+                                    <div className="relative">
+                                        <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                        <input
+                                            type="text"
+                                            name="codigo"
+                                            value={formData.codigo}
+                                            onChange={handleChange}
+                                            placeholder="Ex: TIA-2024"
+                                            className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.codigo ? 'border-red-500 bg-red-50' : 'border-gray-300'} outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64] transition-all`}
+                                        />
+                                    </div>
+                                    {errors.codigo && <p className="text-xs text-red-500 font-medium">{errors.codigo}</p>}
                                 </div>
-                                {errors.ano && <p className="text-red-500 text-xs mt-1">{errors.ano}</p>}
-                            </div>
-
-                            {/* Período */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Período <span className="text-red-500">*</span>
-                                </label>
-                                <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30">
-                                    <div className="bg-[#006b64] p-3"><Calendar className="text-white" size={18} /></div>
-                                    <select ref={periodoRef} className="flex-1 p-2 border-0 focus:ring-0 text-sm outline-none bg-white">
-                                        <option value="">Selecione...</option>
-                                        <option value="1º Semestre">1º Semestre</option>
-                                        <option value="2º Semestre">2º Semestre</option>
-                                        <option value="1º Trimestre">1º Trimestre</option>
-                                        <option value="2º Trimestre">2º Trimestre</option>
-                                        <option value="3º Trimestre">3º Trimestre</option>
-                                        <option value="4º Trimestre">4º Trimestre</option>
-                                    </select>
-                                </div>
-                                {errors.periodo && <p className="text-red-500 text-xs mt-1">{errors.periodo}</p>}
-                            </div>
-                        </div>
-
-                        {/* Código */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Código da Equipe <span className="text-red-500">*</span>
-                            </label>
-                            <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30">
-                                <div className="bg-[#006b64] p-3"><Hash className="text-white" size={18} /></div>
-                                <Input type="text" placeholder="Ex: TIA-2024" ref={codigoRef} className="flex-1 border-0 shadow-none focus:ring-0" />
-                            </div>
-                            {errors.codigo && <p className="text-red-500 text-xs mt-1">{errors.codigo}</p>}
-                        </div>
-
-                        {/* Nome da Equipe */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Nome da Equipe <span className="text-red-500">*</span>
-                            </label>
-                            <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30">
-                                <div className="bg-[#006b64] p-3"><Users className="text-white" size={18} /></div>
-                                <Input type="text" placeholder="Ex: Alpha Team" ref={nomeRef} className="flex-1 border-0 shadow-none focus:ring-0" />
-                            </div>
-                            {errors.nome && <p className="text-red-500 text-xs mt-1">{errors.nome}</p>}
-                        </div>
-
-                        {/* Seleção de Alunos */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Alunos da Equipe <span className="text-red-500">*</span>
-                            </label>
-
-                            {/* Campo de Busca */}
-                            <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30 mb-2">
-                                <div className="bg-[#006b64] p-3">
-                                    <Search className="text-white" size={18} />
-                                </div>
-                                <input
-                                    type="text"
-                                    placeholder="Buscar aluno por nome ou matrícula..."
-                                    value={buscaAluno}
-                                    onChange={(e) => setBuscaAluno(e.target.value)}
-                                    className="flex-1 px-3 py-2 text-sm border-0 outline-none focus:ring-0 bg-white w-full"
-                                />
-                            </div>
-
-                            <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto p-2 bg-gray-50 focus-within:ring-2 focus-within:ring-[#006b64]/30">
-                                {alunos.length === 0 ? (
-                                    <p className="text-sm text-gray-500 p-2 text-center">Nenhum aluno cadastrado no portal.</p>
-                                ) : alunosFiltrados.length === 0 ? (
-                                    <p className="text-sm text-gray-500 p-2 text-center">Nenhum aluno encontrado para a busca.</p>
-                                ) : (
-                                    alunosFiltrados.map(aluno => (
-                                        <label key={aluno.id} className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors">
-                                            <input
-                                                type="checkbox"
-                                                className="rounded border-gray-300 text-[#006b64] focus:ring-[#006b64]"
-                                                checked={selectedAlunos.includes(aluno.id)}
-                                                onChange={() => handleAlunoToggle(aluno.id)}
-                                            />
-                                            <div>
-                                                <p className="text-sm font-medium text-gray-800">{aluno.nome}</p>
-                                                <p className="text-xs text-gray-500">{aluno.matricula}</p>
-                                            </div>
-                                        </label>
-                                    ))
-                                )}
-                            </div>
-                            {errors.alunos && <p className="text-red-500 text-xs mt-1">{errors.alunos}</p>}
-                        </div>
-
-                        {/* Separador visual do Projeto */}
-                        <div className="border-t border-gray-200 pt-5 mt-2">
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="bg-[#006b64]/10 p-1.5 rounded-lg">
-                                    <FolderOpen size={18} className="text-[#006b64]" />
-                                </div>
-                                <h3 className="text-base font-bold text-gray-700">Projeto Vinculado</h3>
-                                <span className="text-xs text-gray-400 ml-1">(opcional)</span>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-1 gap-5">
-                                {/* Dropdown de Projeto com busca */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Projeto
-                                    </label>
-                                    <div className="relative" ref={dropdownRef}>
-                                        {/* Botão do dropdown */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setDropdownAberto(!dropdownAberto)}
-                                            className="w-full flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30 cursor-pointer"
+                                <div className="space-y-1">
+                                    <label className="block text-sm font-semibold text-gray-700">Tipo de MVP <span className="text-red-500">*</span></label>
+                                    <div className="relative">
+                                        <Layers className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                        <select
+                                            name="mvp"
+                                            value={formData.mvp}
+                                            onChange={handleChange}
+                                            className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.mvp ? 'border-red-500 bg-red-50' : 'border-gray-300'} outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64] bg-white`}
                                         >
-                                            <div className="bg-[#006b64] p-3">
-                                                <FolderOpen className="text-white" size={18} />
-                                            </div>
-                                            <span className={`flex-1 px-3 py-2.5 text-sm text-left ${projetoSelecionado ? "text-gray-800" : "text-gray-400"}`}>
-                                                {projetoSelecionado || "Selecione um projeto..."}
-                                            </span>
-                                            <ChevronDown size={16} className={`mr-3 text-gray-400 transition-transform ${dropdownAberto ? "rotate-180" : ""}`} />
-                                        </button>
+                                            <option value="">Selecione...</option>
+                                            <option value="Frontend">MVP Frontend</option>
+                                            <option value="Backend">MVP Backend</option>
+                                            <option value="Mobile">MVP Mobile</option>
+                                        </select>
+                                    </div>
+                                    {errors.mvp && <p className="text-xs text-red-500 font-medium">{errors.mvp}</p>}
+                                </div>
+                            </div>
+                        </div>
 
-                                        {/* Lista dropdown */}
-                                        {dropdownAberto && (
-                                            <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-hidden flex flex-col">
-                                                {/* Busca */}
-                                                <div className="flex items-center border-b border-gray-200 px-3 py-2 gap-2">
-                                                    <Search size={16} className="text-gray-400 shrink-0" />
+                        {/* Seção 2: Calendário */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 text-[#006b64] font-bold border-b border-gray-100 pb-2">
+                                <Clock size={18} />
+                                <span>Calendário Acadêmico</span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-1">
+                                    <label className="block text-sm font-semibold text-gray-700">Data de Criação <span className="text-red-500">*</span></label>
+                                    <div className="relative">
+                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                        <input
+                                            type="date"
+                                            name="data"
+                                            value={formData.data}
+                                            onChange={handleChange}
+                                            className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.data ? 'border-red-500 bg-red-50' : 'border-gray-300'} outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64]`}
+                                        />
+                                    </div>
+                                    {errors.data && <p className="text-xs text-red-500 font-medium">{errors.data}</p>}
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="block text-sm font-semibold text-gray-700">Ano Letivo <span className="text-red-500">*</span></label>
+                                    <div className="relative">
+                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                        <select
+                                            name="ano"
+                                            value={formData.ano}
+                                            onChange={handleChange}
+                                            className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.ano ? 'border-red-500 bg-red-50' : 'border-gray-300'} outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64] bg-white`}
+                                        >
+                                            <option value="">Selecione...</option>
+                                            <option value="2024">2024</option>
+                                            <option value="2025">2025</option>
+                                            <option value="2026">2026</option>
+                                        </select>
+                                    </div>
+                                    {errors.ano && <p className="text-xs text-red-500 font-medium">{errors.ano}</p>}
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="block text-sm font-semibold text-gray-700">Período <span className="text-red-500">*</span></label>
+                                    <div className="relative">
+                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                        <select
+                                            name="periodo"
+                                            value={formData.periodo}
+                                            onChange={handleChange}
+                                            className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.periodo ? 'border-red-500 bg-red-50' : 'border-gray-300'} outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64] bg-white`}
+                                        >
+                                            <option value="">Selecione...</option>
+                                            <option value="1º Semestre">1º Semestre</option>
+                                            <option value="2º Semestre">2º Semestre</option>
+                                            <option value="1º Trimestre">1º Trimestre</option>
+                                            <option value="2º Trimestre">2º Trimestre</option>
+                                            <option value="3º Trimestre">3º Trimestre</option>
+                                            <option value="4º Trimestre">4º Trimestre</option>
+                                        </select>
+                                    </div>
+                                    {errors.periodo && <p className="text-xs text-red-500 font-medium">{errors.periodo}</p>}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Seção 3: Membros */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 text-[#006b64] font-bold border-b border-gray-100 pb-2">
+                                <UserPlus size={18} />
+                                <span>Membros da Equipe</span>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar aluno por nome ou matrícula..."
+                                        value={buscaAluno}
+                                        onChange={(e) => setBuscaAluno(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64] transition-all"
+                                    />
+                                </div>
+
+                                <div className={`border ${errors.alunos ? 'border-red-300 bg-red-50/30' : 'border-gray-200'} rounded-xl overflow-hidden`}>
+                                    <div className="max-h-60 overflow-y-auto p-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {alunos.length === 0 ? (
+                                            <div className="col-span-2 py-8 text-center text-gray-400 flex flex-col items-center gap-2">
+                                                <Users size={32} className="opacity-20" />
+                                                <p className="text-sm">Nenhum aluno cadastrado no portal.</p>
+                                            </div>
+                                        ) : alunosFiltrados.length === 0 ? (
+                                            <div className="col-span-2 py-8 text-center text-gray-400">
+                                                <p className="text-sm">Nenhum aluno encontrado para a busca.</p>
+                                            </div>
+                                        ) : (
+                                            alunosFiltrados.map(aluno => (
+                                                <label key={aluno.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                                                    formData.alunos.includes(aluno.id)
+                                                        ? 'border-[#006b64] bg-[#006b64]/5 shadow-sm'
+                                                        : 'border-transparent hover:bg-gray-50'
+                                                }`}>
+                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                                                        formData.alunos.includes(aluno.id)
+                                                            ? 'bg-[#006b64] border-[#006b64]'
+                                                            : 'border-gray-300 bg-white'
+                                                    }`}>
+                                                        {formData.alunos.includes(aluno.id) && <CheckCircle size={14} className="text-white" />}
+                                                    </div>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="sr-only"
+                                                        checked={formData.alunos.includes(aluno.id)}
+                                                        onChange={() => handleAlunoToggle(aluno.id)}
+                                                    />
+                                                    <div>
+                                                        <p className={`text-sm font-bold ${formData.alunos.includes(aluno.id) ? 'text-[#006b64]' : 'text-gray-700'}`}>{aluno.nome}</p>
+                                                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{aluno.matricula}</p>
+                                                    </div>
+                                                </label>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                                {errors.alunos && <p className="text-xs text-red-500 font-medium">{errors.alunos}</p>}
+                            </div>
+                        </div>
+
+                        {/* Seção 4: Vínculos Externos */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 text-[#006b64] font-bold border-b border-gray-100 pb-2">
+                                <FolderOpen size={18} />
+                                <span>Vínculos Externos</span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-1 relative" ref={dropdownRef}>
+                                    <label className="block text-sm font-semibold text-gray-700">Projeto Vinculado <span className="text-gray-400 font-normal ml-1">(Opcional)</span></label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDropdownAberto(!dropdownAberto)}
+                                        className="w-full flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus:ring-2 focus:ring-[#006b64]/20 transition-all text-left"
+                                    >
+                                        <div className="p-3 border-r border-gray-100">
+                                            <FolderOpen className="text-gray-400" size={16} />
+                                        </div>
+                                        <span className={`flex-1 px-4 py-2.5 text-sm ${formData.projeto ? "text-gray-800 font-medium" : "text-gray-400"}`}>
+                                            {formData.projeto || "Selecione um projeto..."}
+                                        </span>
+                                        <ChevronDown size={16} className={`mr-4 text-gray-400 transition-transform ${dropdownAberto ? "rotate-180" : ""}`} />
+                                    </button>
+
+                                    {dropdownAberto && (
+                                        <div className="absolute z-20 bottom-full mb-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                            <div className="p-2 border-b border-gray-50">
+                                                <div className="relative">
+                                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                                                     <input
                                                         type="text"
                                                         placeholder="Buscar projeto..."
                                                         value={buscaProjeto}
                                                         onChange={(e) => setBuscaProjeto(e.target.value)}
-                                                        className="flex-1 text-sm outline-none border-0 bg-transparent"
+                                                        className="w-full pl-9 pr-4 py-2 text-sm outline-none bg-gray-50 rounded-lg"
                                                         autoFocus
                                                     />
                                                 </div>
-
-                                                {/* Limpar seleção */}
-                                                {projetoSelecionado && (
+                                            </div>
+                                            <div className="max-h-60 overflow-y-auto">
+                                                {formData.projeto && (
                                                     <button
                                                         type="button"
                                                         onClick={() => {
-                                                            setProjetoSelecionado("")
+                                                            setFormData(prev => ({ ...prev, projeto: "" }))
                                                             setDropdownAberto(false)
-                                                            setBuscaProjeto("")
                                                         }}
-                                                        className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors border-b border-gray-100 cursor-pointer"
+                                                        className="w-full text-left px-4 py-2.5 text-xs text-red-500 hover:bg-red-50 transition-colors border-b border-gray-50 font-bold uppercase tracking-wider"
                                                     >
-                                                        ✕ Remover projeto vinculado
+                                                        ✕ Remover vínculo
                                                     </button>
                                                 )}
-
-                                                {/* Itens */}
-                                                <div className="overflow-y-auto max-h-48">
-                                                    {projetosFiltrados.length === 0 ? (
-                                                        <p className="text-sm text-gray-400 text-center py-4">Nenhum projeto encontrado.</p>
-                                                    ) : (
-                                                        projetosFiltrados.map((projeto) => (
-                                                            <button
-                                                                key={projeto}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setProjetoSelecionado(projeto)
-                                                                    setDropdownAberto(false)
-                                                                    setBuscaProjeto("")
-                                                                }}
-                                                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[#006b64]/5 transition-colors flex items-center justify-between cursor-pointer ${projetoSelecionado === projeto ? "bg-[#006b64]/10 text-[#006b64] font-semibold" : "text-gray-700"
-                                                                    }`}
-                                                            >
-                                                                <span>{projeto}</span>
-                                                                {projetoSelecionado === projeto && (
-                                                                    <CheckCircle size={16} className="text-[#006b64]" />
-                                                                )}
-                                                            </button>
-                                                        ))
-                                                    )}
-                                                </div>
+                                                {projetosFiltrados.length === 0 ? (
+                                                    <div className="px-4 py-6 text-center text-gray-400 text-sm">Nenhum projeto encontrado.</div>
+                                                ) : (
+                                                    projetosFiltrados.map((projeto) => (
+                                                        <button
+                                                            key={projeto}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setFormData(prev => ({ ...prev, projeto }))
+                                                                setDropdownAberto(false)
+                                                                setBuscaProjeto("")
+                                                            }}
+                                                            className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-50 transition-all flex items-center justify-between ${formData.projeto === projeto ? "bg-[#006b64]/5 text-[#006b64] font-bold" : "text-gray-700"}`}
+                                                        >
+                                                            <span>{projeto}</span>
+                                                            {formData.projeto === projeto && <CheckCircle size={14} />}
+                                                        </button>
+                                                    ))
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Link do GitHub */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Link do Repositório GitHub
-                                    </label>
-                                    <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30">
-                                        <div className="bg-[#006b64] p-3">
-                                            <FolderGit2 className="text-white" size={18} />
-                                        </div>
-                                        <Input
+                                <div className="space-y-1">
+                                    <label className="block text-sm font-semibold text-gray-700">Link do Repositório GitHub <span className="text-gray-400 font-normal ml-1">(Opcional)</span></label>
+                                    <div className="relative">
+                                        <FolderGit2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                        <input
                                             type="url"
-                                            placeholder="https://github.com/usuario/repositorio"
-                                            value={githubUrl}
-                                            onChange={(e) => setGithubUrl(e.target.value)}
-                                            className="flex-1 border-0 shadow-none focus:ring-0"
+                                            name="githubUrl"
+                                            value={formData.githubUrl}
+                                            onChange={handleChange}
+                                            placeholder="https://github.com/usuario/repo"
+                                            className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.githubUrl ? 'border-red-500 bg-red-50' : 'border-gray-300'} outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64] transition-all`}
                                         />
                                     </div>
-                                    {errors.github && <p className="text-red-500 text-xs mt-1">{errors.github}</p>}
+                                    {errors.githubUrl && <p className="text-xs text-red-500 font-medium">{errors.githubUrl}</p>}
                                 </div>
+
+                                {formData.projeto && (
+                                    <div className="space-y-1">
+                                        <label className="block text-sm font-semibold text-gray-700">Status do Projeto</label>
+                                        <div className="relative">
+                                            <CheckCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                            <select
+                                                name="status"
+                                                value={formData.status}
+                                                onChange={handleChange}
+                                                className={`w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64] bg-white text-sm font-medium ${formData.status === "Concluído" ? "text-green-600" : "text-blue-600"}`}
+                                            >
+                                                <option value="Em andamento">Em andamento</option>
+                                                <option value="Concluído">Concluído</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
+                    </div>
 
-                        {/* Botões */}
-                        <div className="flex gap-3 mt-4">
-                            <Button type="button" variant="outline" className="flex-1" onClick={() => navigate("/grupos")}>
-                                <ArrowLeft size={16} className="mr-1" /> Voltar
-                            </Button>
-                            <Button type="button" variant="outline" className="flex-1" onClick={handleLimpar}>
-                                <Eraser size={16} className="mr-1" /> Limpar
-                            </Button>
-                            <Button type="submit" className="flex-1 bg-[#006b64] hover:bg-[#015c55] text-white">
-                                <Save size={16} className="mr-1" /> Salvar
-                            </Button>
-                        </div>
-                    </form>
-                </div>
+                    <div className="bg-gray-50 p-6 flex flex-col sm:flex-row justify-end gap-3 border-t border-gray-100 rounded-b-2xl">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => navigate("/grupos")}
+                            className="w-full sm:w-auto px-8 py-2.5 text-gray-600 border-gray-300 hover:bg-white"
+                        >
+                            <X size={18} className="mr-2" /> Cancelar
+                        </Button>
+                        <Button
+                            type="submit"
+                            className="w-full sm:w-auto px-8 py-2.5 bg-[#006b64] hover:bg-[#00524d] text-white font-bold shadow-md shadow-[#006b64]/20"
+                        >
+                            <Save size={18} className="mr-2" /> {isEdit ? "Salvar Alterações" : "Cadastrar Equipe"}
+                        </Button>
+                    </div>
+                </form>
             </main>
         </section>
     )
 }
 
 export default CadastroGrupo
+

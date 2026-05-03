@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Users, Plus, Search, Calendar, Layers, Hash, FolderX, LogOut, User } from "lucide-react"
+import { ArrowLeft, Users, Plus, Search, Calendar, Layers, Hash, FolderX, LogOut, User, LayoutGrid, Clock, CheckCircle } from "lucide-react"
 import { Button } from "../components/ui/button"
 import GrupoModal from "../components/grupos/GrupoModal"
 import { useAuth } from "../context/AuthContext"
@@ -24,16 +24,16 @@ function ListaGrupos() {
             setGrupos(JSON.parse(stored))
         } else {
             const mockGrupos = [
-                { id: 1, codigo: "FE-001", nome: "React Ninjas", data: "2024-03-10", ano: "2024", periodo: "1º Semestre", mvp: "Frontend", alunos: [], projeto: "Plataforma de Ensino Online", githubUrl: "https://github.com/react-ninjas/plataforma-ensino" },
+                { id: 1, codigo: "FE-001", nome: "React Ninjas", data: "2024-03-10", ano: "2024", periodo: "1º Semestre", mvp: "Frontend", alunos: [], projeto: "Plataforma de Ensino Online", githubUrl: "https://github.com/react-ninjas/plataforma-ensino", status: "Em andamento" },
                 { id: 2, codigo: "FE-002", nome: "Vue Vanguards", data: "2024-03-15", ano: "2024", periodo: "1º Semestre", mvp: "Frontend", alunos: [] },
-                { id: 3, codigo: "FE-003", nome: "Angular Architects", data: "2024-08-20", ano: "2024", periodo: "2º Semestre", mvp: "Frontend", alunos: [], projeto: "E-commerce MVP", githubUrl: "https://github.com/angular-architects/ecommerce" },
+                { id: 3, codigo: "FE-003", nome: "Angular Architects", data: "2024-08-20", ano: "2024", periodo: "2º Semestre", mvp: "Frontend", alunos: [], projeto: "E-commerce MVP", githubUrl: "https://github.com/angular-architects/ecommerce", status: "Concluído" },
                 { id: 4, codigo: "FE-004", nome: "Svelte Squad", data: "2025-02-10", ano: "2025", periodo: "1º Trimestre", mvp: "Frontend", alunos: [] },
-                { id: 5, codigo: "BE-001", nome: "Node Knights", data: "2024-04-05", ano: "2024", periodo: "1º Semestre", mvp: "Backend", alunos: [], projeto: "Sistema de Gestão Acadêmica", githubUrl: "https://github.com/node-knights/gestao-academica" },
+                { id: 5, codigo: "BE-001", nome: "Node Knights", data: "2024-04-05", ano: "2024", periodo: "1º Semestre", mvp: "Backend", alunos: [], projeto: "Sistema de Gestão Acadêmica", githubUrl: "https://github.com/node-knights/gestao-academica", status: "Em andamento" },
                 { id: 6, codigo: "BE-002", nome: "Python Pioneers", data: "2024-05-12", ano: "2024", periodo: "1º Semestre", mvp: "Backend", alunos: [] },
                 { id: 7, codigo: "BE-003", nome: "Java Juggernauts", data: "2024-09-01", ano: "2024", periodo: "2º Semestre", mvp: "Backend", alunos: [] },
-                { id: 8, codigo: "BE-004", nome: "Go Gurus", data: "2025-03-15", ano: "2025", periodo: "1º Trimestre", mvp: "Backend", alunos: [], projeto: "App de Delivery", githubUrl: "https://github.com/go-gurus/delivery-app" },
+                { id: 8, codigo: "BE-004", nome: "Go Gurus", data: "2025-03-15", ano: "2025", periodo: "1º Trimestre", mvp: "Backend", alunos: [], projeto: "App de Delivery", githubUrl: "https://github.com/go-gurus/delivery-app", status: "Em andamento" },
                 { id: 9, codigo: "MB-001", nome: "Flutter Foxes", data: "2024-02-20", ano: "2024", periodo: "1º Semestre", mvp: "Mobile", alunos: [] },
-                { id: 10, codigo: "MB-002", nome: "React Native Rangers", data: "2024-06-10", ano: "2024", periodo: "1º Semestre", mvp: "Mobile", alunos: [], projeto: "App de Controle Financeiro", githubUrl: "https://github.com/rn-rangers/controle-financeiro" },
+                { id: 10, codigo: "MB-002", nome: "React Native Rangers", data: "2024-06-10", ano: "2024", periodo: "1º Semestre", mvp: "Mobile", alunos: [], projeto: "App de Controle Financeiro", githubUrl: "https://github.com/rn-rangers/controle-financeiro", status: "Concluído" },
                 { id: 11, codigo: "MB-003", nome: "Swift Spartans", data: "2024-10-05", ano: "2024", periodo: "2º Semestre", mvp: "Mobile", alunos: [] },
                 { id: 12, codigo: "MB-004", nome: "Kotlin Kings", data: "2025-01-20", ano: "2025", periodo: "1º Trimestre", mvp: "Mobile", alunos: [] }
             ]
@@ -41,6 +41,21 @@ function ListaGrupos() {
             setGrupos(mockGrupos)
         }
     }, [])
+
+    const handleStatusChange = (grupoId, novoStatus) => {
+        const storedGrupos = localStorage.getItem("grupos_mock")
+        let gruposMock = storedGrupos ? JSON.parse(storedGrupos) : []
+        
+        const novosGrupos = gruposMock.map(g => {
+            if (g.id === grupoId) {
+                return { ...g, status: novoStatus }
+            }
+            return g
+        })
+        
+        localStorage.setItem("grupos_mock", JSON.stringify(novosGrupos))
+        setGrupos(novosGrupos)
+    }
 
     const handleDeleteGrupo = (grupoId) => {
         const storedGrupos = localStorage.getItem("grupos_mock")
@@ -105,6 +120,37 @@ function ListaGrupos() {
                     {grupo.alunos?.length || 0} alunos
                 </span>
             </div>
+
+            {/* Status do Projeto - Visível apenas se tiver projeto vinculado */}
+            {grupo.projeto && (
+                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between pl-2">
+                    <div className="flex items-center gap-2 text-[11px] text-gray-500 font-bold uppercase tracking-wider">
+                        {grupo.status === 'Concluído' ? (
+                            <div className="bg-green-100 p-1 rounded-full text-green-600">
+                                <CheckCircle size={12} />
+                            </div>
+                        ) : (
+                            <div className="bg-blue-100 p-1 rounded-full text-blue-600 animate-pulse">
+                                <Clock size={12} />
+                            </div>
+                        )}
+                        Status:
+                    </div>
+                    <select
+                        value={grupo.status || "Em andamento"}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => handleStatusChange(grupo.id, e.target.value)}
+                        className={`text-xs font-bold py-1.5 px-3 rounded-lg border outline-none transition-all cursor-pointer shadow-sm ${
+                            grupo.status === "Concluído"
+                                ? "bg-green-50 border-green-200 text-green-700 focus:ring-2 focus:ring-green-500/20"
+                                : "bg-blue-50 border-blue-200 text-blue-700 focus:ring-2 focus:ring-blue-500/20"
+                        }`}
+                    >
+                        <option value="Em andamento">Em andamento</option>
+                        <option value="Concluído">Concluído</option>
+                    </select>
+                </div>
+            )}
         </div>
     )
 
@@ -131,55 +177,27 @@ function ListaGrupos() {
     return (
         <section className="min-h-screen bg-gray-50 flex flex-col">
             {/* Header */}
-            <header className="bg-[#006b64] text-white px-6 py-4 shadow-md w-full">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate("/dashboard")}
-                            type="button"
-                            className="text-white/80 hover:text-white hover:bg-white/20 px-2 cursor-pointer"
-                        >
-                            <ArrowLeft size={18} className="mr-1" />
-                            Voltar
-                        </Button>
-                        <div className="h-5 w-px bg-white/30 mx-1" />
-                        <div className="flex items-center gap-2">
-                            <Layers size={20} />
-                            <h1 className="text-lg font-semibold tracking-wide">Grupos & Equipes</h1>
-                        </div>
+            <div className="mb-8">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                            <Layers size={28} className="text-[#006b64]" />
+                            Grupos & Equipes
+                        </h1>
+                        <p className="text-gray-500 text-sm">Gerencie os grupos de projeto e seus respectivos alunos.</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            onClick={() => navigate("/grupos/cadastro")}
-                            className="bg-white text-[#006b64] hover:bg-white/90 font-semibold text-sm px-4 py-2 cursor-pointer shadow-sm transition-transform hover:scale-105"
-                        >
-                            <Plus size={16} className="mr-1" />
-                            Novo Grupo
-                        </Button>
-                        <Button
-                            onClick={() => navigate("/perfil")}
-                            variant="ghost"
-                            className="text-white/80 hover:text-white hover:bg-white/20 font-semibold text-sm px-4 py-2 cursor-pointer transition-transform hover:scale-105"
-                        >
-                            <User size={16} className="mr-1" />
-                            Perfil
-                        </Button>
-                        <Button
-                            onClick={logout}
-                            variant="ghost"
-                            className="text-white/80 hover:text-white hover:bg-white/20 font-semibold text-sm px-4 py-2 cursor-pointer transition-transform hover:scale-105"
-                        >
-                            <LogOut size={16} className="mr-1" />
-                            Sair
-                        </Button>
-                    </div>
+                    <Button
+                        onClick={() => navigate("/grupos/cadastro")}
+                        className="bg-[#006b64] hover:bg-[#00524d] text-white font-semibold text-sm px-6 py-2 shadow-sm transition-transform hover:scale-105 w-fit"
+                    >
+                        <Plus size={16} className="mr-1" />
+                        Novo Grupo
+                    </Button>
                 </div>
-            </header>
+            </div>
 
             {/* Main */}
-            <main className="flex-1 w-full px-6 py-8 max-w-7xl mx-auto">
+            <main className="flex-1 w-full">
 
                 {/* Filtros */}
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-8">
