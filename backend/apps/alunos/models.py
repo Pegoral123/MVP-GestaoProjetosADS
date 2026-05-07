@@ -23,7 +23,7 @@ class Aluno(models.Model):
 
     email = models.EmailField(
         max_length=150,
-        unique=True,
+        null=True,
         verbose_name="Email",
         help_text="Endereço de email único do aluno",
     )
