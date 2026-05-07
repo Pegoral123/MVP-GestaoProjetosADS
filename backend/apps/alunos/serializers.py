@@ -1,5 +1,3 @@
-# apps/alunos/serializers.py
-
 from rest_framework import serializers
 
 from apps.alunos.models import Aluno
@@ -24,7 +22,7 @@ class AlunoSerializer(serializers.ModelSerializer):
             "id",
             "nome",
             "email",
-            "telefone",
+            "celular",
             "matricula",
             "grupo",
             "grupo_nome",
@@ -45,7 +43,7 @@ class CriarAlunoSerializer(serializers.ModelSerializer):
         fields = (
             "nome",
             "email",
-            "telefone",
+            "celular",
             "matricula",
             "grupo",
         )
@@ -72,13 +70,13 @@ class AtualizarAlunoSerializer(serializers.ModelSerializer):
         fields = (
             "nome",
             "email",
-            "telefone",
+            "celular",
             "matricula",
             "grupo",
         )
 
     def validate_email(self, value):
-        # Ignora o próprio aluno na verificação de unicidade
+       
         if Aluno.objects.filter(email=value).exclude(
             pk=self.instance.pk
         ).exists():
