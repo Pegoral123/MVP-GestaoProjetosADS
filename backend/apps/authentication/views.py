@@ -145,7 +145,27 @@ class UserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserReponseSerializer
     queryset = CustomUser.objects.all().order_by("-date_joined")
+    
 
+class MeView(APIView):
+    """
+    Retorna os dados do usuário logado.
+    GET /api/v1/auth/me/
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=UserReponseSerializer)
+    def get(self, request):
+        serializer = UserReponseSerializer(request.user)
+        return Response(
+            {
+                "data": serializer.data,
+                "message": "Usuário autenticado.",
+                "statusCode": status.HTTP_200_OK,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class DeactivateUserView(APIView):
     """
@@ -167,3 +187,4 @@ class DeactivateUserView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+    
