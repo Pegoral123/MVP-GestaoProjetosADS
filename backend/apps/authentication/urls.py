@@ -8,6 +8,7 @@ from apps.authentication.views import (
     ChangePasswordView,
     DeactivateUserView,
     LogoutView,
+    MeView,
     RegisterView,
     UserListView,
 )
@@ -26,5 +27,6 @@ urlpatterns = [
     path("users/<int:pk>/", DeactivateUserView.as_view(), name="user_deactivate"),
 
     #  Perfil do usuário logado
+    path("me/", MeView.as_view(), name="me"),
     path("change-password/", ChangePasswordView.as_view(), name="change_password"),
 ]
