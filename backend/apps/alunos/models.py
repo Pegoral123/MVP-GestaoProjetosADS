@@ -28,12 +28,12 @@ class Aluno(models.Model):
         help_text="Endereço de email único do aluno",
     )
 
-    telefone = models.CharField(
+    celular = models.CharField(
         max_length=15,
         blank=True,
         null=True,
-        verbose_name="Telefone",
-        help_text="Telefone do aluno (opcional)",
+        verbose_name="Celular",
+        help_text="Número de celular do aluno (opcional)",
     )
 
     matricula = models.CharField(
