@@ -90,6 +90,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "API do sistema de gerenciamento de projetos ADS",
     "VERSION": "1.0.0",
     "COMPONENT_SPLIT_REQUEST": True,
+    "SERVE_INCLUDE_SCHEMA": False, 
     "APPEND_COMPONENTS": {
         "securitySchemes": {
             "bearerAuth": {
