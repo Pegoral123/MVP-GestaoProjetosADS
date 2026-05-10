@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { X, Hash, Edit, Trash2, AlertTriangle, Users, Calendar, Layers, FolderGit2, Link2, FolderOpen, ChevronDown, CheckCircle } from "lucide-react"
 import { Button } from "../ui/button"
 import { useNavigate } from "react-router-dom"
+import api from "../../services/api"
 
 function GrupoModal({ grupo, onClose, onDelete }) {
     const navigate = useNavigate()
@@ -14,14 +15,22 @@ function GrupoModal({ grupo, onClose, onDelete }) {
             setIsConfirming(false)
             setMembrosExpandido(false)
         } else {
-            const storedAlunos = localStorage.getItem("alunos_mock")
-            if (storedAlunos && grupo.alunos?.length > 0) {
-                const todosAlunos = JSON.parse(storedAlunos)
-                const membros = todosAlunos.filter(a => grupo.alunos.includes(a.id))
-                setAlunosData(membros)
-            } else {
-                setAlunosData([])
-            }
+            const fetchMembros = async () => {
+                if (grupo.alunos?.length > 0) {
+                    try {
+                        const res = await api.get('/api/v1/alunos/');
+                        const todosAlunos = Array.isArray(res.data) ? res.data : (res.data.results || []);
+                        const membros = todosAlunos.filter(a => grupo.alunos.includes(a.id));
+                        setAlunosData(membros);
+                    } catch (error) {
+                        console.error("Erro ao carregar membros do grupo", error);
+                        setAlunosData([]);
+                    }
+                } else {
+                    setAlunosData([]);
+                }
+            };
+            fetchMembros();
         }
     }, [grupo])
 

@@ -6,30 +6,7 @@ import AlunoCard from "../components/alunos/AlunoCard"
 import AlunoModal from "../components/alunos/AlunoModal"
 import { useAuth } from "../context/AuthContext"
 
-// Dados mock
-const ALUNOS_MOCK = [
-    {
-        id: 1,
-        matricula: "2024001001",
-        nome: "Ana Beatriz Carvalho",
-        email: "ana.carvalho@unifeso.edu.br",
-        celular: "(22) 99821-0011",
-    },
-    {
-        id: 2,
-        matricula: "2024001002",
-        nome: "Carlos Eduardo Lima",
-        email: "carlos.lima@unifeso.edu.br",
-        celular: "(22) 98752-3344",
-    },
-    {
-        id: 3,
-        matricula: "2024001003",
-        nome: "Fernanda Oliveira Santos",
-        email: "fernanda.santos@unifeso.edu.br",
-        celular: "(21) 97654-5566",
-    },
-]
+import api from "../services/api"
 
 function ListaAlunos() {
     const navigate = useNavigate()
@@ -38,29 +15,50 @@ function ListaAlunos() {
     const [alunoSelecionado, setAlunoSelecionado] = useState(null)
     const [alunos, setAlunos] = useState([])
 
-    useEffect(() => {
-        const stored = localStorage.getItem("alunos_mock")
-        if (stored) {
-            setAlunos(JSON.parse(stored))
-        } else {
-            localStorage.setItem("alunos_mock", JSON.stringify(ALUNOS_MOCK))
-            setAlunos(ALUNOS_MOCK)
+    const [loading, setLoading] = useState(true);
+
+    const carregarAlunos = async () => {
+        try {
+            const response = await api.get('/api/v1/alunos/');
+            let data = [];
+            if (Array.isArray(response.data)) {
+                data = response.data;
+            } else if (response.data && Array.isArray(response.data.results)) {
+                data = response.data.results;
+            } else if (response.data && Array.isArray(response.data.data)) {
+                data = response.data.data;
+            } else if (response.data && Array.isArray(response.data.alunos)) {
+                data = response.data.alunos;
+            }
+            setAlunos(data);
+        } catch (error) {
+            console.error("Erro ao carregar alunos", error);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    useEffect(() => {
+        carregarAlunos();
     }, [])
 
-    const handleDeleteAluno = (id) => {
-        const novosAlunos = alunos.filter((a) => a.id !== id)
-        setAlunos(novosAlunos)
-        localStorage.setItem("alunos_mock", JSON.stringify(novosAlunos))
-        setAlunoSelecionado(null)
+    const handleDeleteAluno = async (id) => {
+        try {
+            await api.delete(`/api/v1/alunos/${id}/`);
+            setAlunos(alunos.filter((a) => a.id !== id));
+            setAlunoSelecionado(null);
+        } catch (error) {
+            console.error("Erro ao excluir aluno", error);
+            alert("Não foi possível excluir o aluno.");
+        }
     }
 
     const alunosFiltrados = alunos.filter((a) => {
-        const q = busca.toLowerCase()
+        const q = String(busca).toLowerCase()
         return (
-            a.nome.toLowerCase().includes(q) ||
-            a.matricula.includes(q) ||
-            a.email.toLowerCase().includes(q)
+            String(a.nome || "").toLowerCase().includes(q) ||
+            String(a.matricula || "").toLowerCase().includes(q) ||
+            String(a.email || "").toLowerCase().includes(q)
         )
     })
 

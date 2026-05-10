@@ -18,6 +18,7 @@ import {
     UserPlus,
     Clock
 } from "lucide-react"
+import api from "../services/api"
 
 function CadastroGrupo() {
     const navigate = useNavigate()
@@ -47,9 +48,25 @@ function CadastroGrupo() {
     const [successMsg, setSuccessMsg] = useState("")
 
     useEffect(() => {
-        // Carregar alunos
-        const storedAlunos = localStorage.getItem("alunos_mock")
-        if (storedAlunos) setAlunos(JSON.parse(storedAlunos))
+        const fetchAlunos = async () => {
+            try {
+                const res = await api.get('/api/v1/alunos/');
+                let data = [];
+                if (Array.isArray(res.data)) {
+                    data = res.data;
+                } else if (res.data && Array.isArray(res.data.results)) {
+                    data = res.data.results;
+                } else if (res.data && Array.isArray(res.data.data)) {
+                    data = res.data.data;
+                } else if (res.data && Array.isArray(res.data.alunos)) {
+                    data = res.data.alunos;
+                }
+                setAlunos(data);
+            } catch (error) {
+                console.error("Erro ao buscar alunos", error);
+            }
+        };
+        fetchAlunos();
 
         const staticProjetos = [
             "Sistema de Gestão Acadêmica",
@@ -69,7 +86,6 @@ function CadastroGrupo() {
         const storedProjetos = localStorage.getItem("projetos_mock")
         if (storedProjetos) {
             const userProjetos = JSON.parse(storedProjetos).map(p => p.nome)
-            // Mesclar e remover duplicatas
             const merged = Array.from(new Set([...userProjetos, ...staticProjetos]))
             setProjetos(merged)
         } else {
@@ -123,11 +139,11 @@ function CadastroGrupo() {
             const newAlunos = isSelected
                 ? prev.alunos.filter(id => id !== alunoId)
                 : [...prev.alunos, alunoId]
-            
+
             if (errors.alunos) {
                 setErrors(e => ({ ...e, alunos: null }))
             }
-            
+
             return { ...prev, alunos: newAlunos }
         })
     }
@@ -157,7 +173,7 @@ function CadastroGrupo() {
         return Object.keys(newErrors).length === 0
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
         if (!validate()) return
 
@@ -169,9 +185,14 @@ function CadastroGrupo() {
         const storedGrupos = localStorage.getItem("grupos_mock")
         let gruposMock = storedGrupos ? JSON.parse(storedGrupos) : []
 
+        let oldAlunos = [];
+
         if (isEdit) {
             const index = gruposMock.findIndex((g) => g.id.toString() === id)
-            if (index !== -1) gruposMock[index] = payload
+            if (index !== -1) {
+                oldAlunos = gruposMock[index].alunos || [];
+                gruposMock[index] = payload
+            }
             setSuccessMsg(`Equipe "${payload.nome}" atualizada com sucesso!`)
         } else {
             gruposMock.push(payload)
@@ -179,6 +200,23 @@ function CadastroGrupo() {
         }
 
         localStorage.setItem("grupos_mock", JSON.stringify(gruposMock))
+
+        // Vincular/desvincular alunos na API
+        try {
+            const currentAlunos = payload.alunos;
+            const alunosToLink = currentAlunos.filter(a => !oldAlunos.includes(a));
+            const alunosToUnlink = oldAlunos.filter(a => !currentAlunos.includes(a));
+
+            for (const alunoId of alunosToLink) {
+                await api.patch(`/api/v1/alunos/${alunoId}/vincular-grupo/`, { grupo: payload.id });
+            }
+            for (const alunoId of alunosToUnlink) {
+                await api.patch(`/api/v1/alunos/${alunoId}/vincular-grupo/`, { grupo: null });
+            }
+        } catch (error) {
+            console.error("Erro ao vincular alunos no backend", error);
+        }
+
         setTimeout(() => {
             navigate("/grupos")
         }, 1500)
@@ -382,16 +420,14 @@ function CadastroGrupo() {
                                             </div>
                                         ) : (
                                             alunosFiltrados.map(aluno => (
-                                                <label key={aluno.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                                                    formData.alunos.includes(aluno.id)
+                                                <label key={aluno.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${formData.alunos.includes(aluno.id)
                                                         ? 'border-[#006b64] bg-[#006b64]/5 shadow-sm'
                                                         : 'border-transparent hover:bg-gray-50'
-                                                }`}>
-                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-                                                        formData.alunos.includes(aluno.id)
+                                                    }`}>
+                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${formData.alunos.includes(aluno.id)
                                                             ? 'bg-[#006b64] border-[#006b64]'
                                                             : 'border-gray-300 bg-white'
-                                                    }`}>
+                                                        }`}>
                                                         {formData.alunos.includes(aluno.id) && <CheckCircle size={14} className="text-white" />}
                                                     </div>
                                                     <input
