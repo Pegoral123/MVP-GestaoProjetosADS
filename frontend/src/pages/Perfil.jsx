@@ -27,16 +27,40 @@ function Perfil() {
     const [errorPwd, setErrorPwd] = useState("")
 
     useEffect(() => {
-        // Como a API atual não possui o /auth/users/me/,
-        // estamos pegando o username que foi salvo no login.
-        const username = localStorage.getItem('logged_username');
-        const email = localStorage.getItem('email');
-        if (username) {
-            setCurrentUser({ username: username, email: email });
-        } else {
-            setErrorUser("Não foi possível carregar os dados do perfil.");
-        }
-        setLoadingUser(false);
+        const fetchUser = async () => {
+            try {
+                const response = await api.get('/api/v1/auth/me/');
+                let userData = response.data;
+                if (userData && userData.data && typeof userData.data === 'object' && !Array.isArray(userData.data)) {
+                    userData = userData.data;
+                } else if (userData && userData.user && typeof userData.user === 'object') {
+                    userData = userData.user;
+                }
+
+                if (Array.isArray(userData) && userData.length > 0) {
+                    userData = userData[0];
+                } else if (userData && userData.results && Array.isArray(userData.results) && userData.results.length > 0) {
+                    userData = userData.results[0];
+                }
+
+                const username = userData.username || localStorage.getItem('logged_username') || "Usuário";
+                const email = userData.email || localStorage.getItem('email') || "";
+
+                setCurrentUser({ username, email });
+            } catch (error) {
+                console.error("Erro ao buscar perfil", error);
+                const username = localStorage.getItem('logged_username');
+                const email = localStorage.getItem('email');
+                if (username) {
+                    setCurrentUser({ username, email });
+                } else {
+                    setErrorUser("Não foi possível carregar os dados do perfil.");
+                }
+            } finally {
+                setLoadingUser(false);
+            }
+        };
+        fetchUser();
     }, [])
 
 
@@ -105,12 +129,10 @@ function Perfil() {
                 <p className="text-gray-500 text-sm">Gerencie seus dados e cadastre novos administradores.</p>
             </div>
 
-            {/* Main */}
             <main className="flex-1 w-full grid grid-cols-1 lg:grid-cols-2 gap-8">
 
                 {/* Coluna 1: Dados do Usuário e Alterar Senha */}
                 <div className="flex flex-col gap-8">
-                    {/* Dados do Usuário */}
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-fit">
                         <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
                             <div className="bg-[#006b64]/10 p-3 rounded-full text-[#006b64]">

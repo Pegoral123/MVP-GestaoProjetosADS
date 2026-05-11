@@ -43,7 +43,7 @@ function VincularProjeto() {
             }
         }
 
-        // Carregar projetos (mesma lógica do CadastroGrupo)
+        // Mock de Proj
         const staticProjetos = [
             "Sistema de Gestão Acadêmica",
             "E-commerce MVP",

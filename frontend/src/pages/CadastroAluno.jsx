@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { Button } from "../components/ui/button"
 import { ArrowLeft, UserPlus, X, Phone, Mail, Hash, User, Save, Contact } from "lucide-react"
+import api from "../services/api"
 
 function CadastroAluno() {
     const navigate = useNavigate()
@@ -20,19 +21,30 @@ function CadastroAluno() {
 
     useEffect(() => {
         if (isEdit) {
-            const stored = localStorage.getItem("alunos_mock")
-            if (stored) {
-                const alunosMock = JSON.parse(stored)
-                const alunoEdit = alunosMock.find((a) => a.id.toString() === id)
-                if (alunoEdit) {
+            const fetchAluno = async () => {
+                try {
+                    const response = await api.get(`/api/v1/alunos/${id}/`);
+                    let alunoEdit = response.data;
+                    if (response.data && response.data.data && typeof response.data.data === 'object' && !Array.isArray(response.data.data)) {
+                        alunoEdit = response.data.data;
+                    } else if (response.data && response.data.aluno) {
+                        alunoEdit = response.data.aluno;
+                    }
+                    if (Array.isArray(alunoEdit) && alunoEdit.length > 0) {
+                        alunoEdit = alunoEdit[0];
+                    }
+                    
                     setFormData({
                         matricula: alunoEdit.matricula || "",
                         nome: alunoEdit.nome || "",
                         email: alunoEdit.email || "",
                         celular: alunoEdit.celular || ""
-                    })
+                    });
+                } catch (error) {
+                    console.error("Erro ao buscar aluno", error);
                 }
-            }
+            };
+            fetchAluno();
         }
     }, [id, isEdit])
 
@@ -61,33 +73,45 @@ function CadastroAluno() {
         }
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
         if (!validate()) return
 
-        const payload = {
-            ...formData,
-            id: isEdit ? parseInt(id) : Date.now(),
-        }
-
-        const stored = localStorage.getItem("alunos_mock")
-        let alunosMock = stored ? JSON.parse(stored) : []
-
-        if (isEdit) {
-            const index = alunosMock.findIndex((a) => a.id.toString() === id)
-            if (index !== -1) {
-                alunosMock[index] = payload
+        try {
+            if (isEdit) {
+                await api.patch(`/api/v1/alunos/${id}/`, formData)
+                setSuccessMsg(`Aluno "${formData.nome}" atualizado com sucesso!`)
+            } else {
+                await api.post('/api/v1/alunos/', formData)
+                setSuccessMsg(`Aluno "${formData.nome}" cadastrado com sucesso!`)
             }
-            setSuccessMsg(`Aluno "${payload.nome}" atualizado com sucesso!`)
-        } else {
-            alunosMock.push(payload)
-            setSuccessMsg(`Aluno "${payload.nome}" cadastrado com sucesso!`)
+            
+            setTimeout(() => {
+                navigate("/alunos")
+            }, 1500)
+        } catch (error) {
+            console.error("Erro ao salvar aluno", error);
+            let msgs = "Ocorreu um erro ao salvar o aluno.";
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.errors) {
+                    msgs = Object.entries(data.errors)
+                        .map(([campo, erros]) => `${campo}: ${Array.isArray(erros) ? erros.join(", ") : erros}`)
+                        .join("\n");
+                } else if (data.message) {
+                    msgs = data.message;
+                } else if (data.detail) {
+                    msgs = data.detail;
+                } else if (typeof data === 'string') {
+                    msgs = data;
+                } else {
+                    msgs = Object.entries(data)
+                        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : JSON.stringify(v)}`)
+                        .join("\n");
+                }
+            }
+            alert(`Erro:\n${msgs}`);
         }
-
-        localStorage.setItem("alunos_mock", JSON.stringify(alunosMock))
-        setTimeout(() => {
-            navigate("/alunos")
-        }, 1500)
     }
 
     return (
