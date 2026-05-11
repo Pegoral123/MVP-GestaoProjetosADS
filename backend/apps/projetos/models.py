@@ -3,48 +3,56 @@ from django.db import models
 
 class Projeto(models.Model):
     """
-    Modelo para representar um projeto no sistema de gestão.
-
-    Armazena informações sobre projetos desenvolvidos por grupos,
-    incluindo título, descrição, link do repositório e status.
+    Representa um projeto/tema disponível para os grupos.
+    Um projeto pode ser usado por vários grupos.
     """
 
-    STATUS_CHOICES = (
-        ("ATIVO", "Ativo"),
-        ("INATIVO", "Inativo"),
-    )
+    class Status(models.TextChoices):
+        ATIVO   = "Ativo",   "Ativo"
+        INATIVO = "Inativo", "Inativo"
 
-    id = models.AutoField(
-        primary_key=True,
-        verbose_name="ID",
-        help_text="Identificador único do projeto",
-    )
+    class MVP(models.TextChoices):
+        FRONTEND = "Frontend", "Frontend"
+        BACKEND  = "Backend",  "Backend"
+        MOBILE   = "Mobile",   "Mobile"
 
-    titulo = models.CharField(
+    nome = models.CharField(
         max_length=150,
-        verbose_name="Título",
-        help_text="Título do projeto",
+        verbose_name="Nome",
+        help_text="Nome do projeto",
     )
 
     descricao = models.TextField(
-        blank=True,
-        null=True,
         verbose_name="Descrição",
         help_text="Descrição detalhada do projeto",
     )
 
-    link_github = models.URLField(
-        max_length=500,
-        verbose_name="Link do Repositório",
-        help_text="Link do repositório GitHub do projeto",
+    mvp = models.CharField(
+        max_length=20,
+        choices=MVP.choices,
+        verbose_name="MVP",
+        help_text="Tipo de MVP: Frontend, Backend ou Mobile",
+    )
+
+    ano = models.CharField(
+        max_length=4,
+        verbose_name="Ano",
+        help_text="Ano do projeto. Ex: 2024",
+    )
+
+    requisitos = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Requisitos",
+        help_text="Requisitos do projeto (opcional)",
     )
 
     status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="ATIVO",
+        max_length=10,
+        choices=Status.choices,
+        default=Status.ATIVO,
         verbose_name="Status",
-        help_text="Status do projeto (ativo ou inativo)",
+        help_text="Status do projeto: Ativo ou Inativo",
     )
 
     grupo = models.ForeignKey(
@@ -58,26 +66,18 @@ class Projeto(models.Model):
     criado_em = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Criado em",
-        help_text="Data e hora de criação do projeto",
     )
 
     atualizado_em = models.DateTimeField(
         auto_now=True,
         verbose_name="Atualizado em",
-        help_text="Data e hora da última atualização",
     )
 
     class Meta:
         ordering = ["-criado_em"]
 
     def __str__(self) -> str:
-        """Representação do projeto."""
-        return str(self.titulo)
+        return f"{self.nome} ({self.status})"
 
-    def is_ativo(self) -> bool:
-        """Verifica se o projeto está ativo."""
-        return self.status == "ATIVO"
-
-    def is_inativo(self) -> bool:
-        """Verifica se o projeto está inativo."""
-        return self.status == "INATIVO"
+    def __repr__(self) -> str:
+        return f"<Projeto: {self.nome} - {self.status}>"

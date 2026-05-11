@@ -167,3 +167,4 @@ SIMPLE_JWT = {
 
 # Arquivos estaticos
 STATIC_URL = 'static/'
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
