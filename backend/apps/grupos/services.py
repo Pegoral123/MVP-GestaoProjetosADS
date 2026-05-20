@@ -69,3 +69,17 @@ class GrupoService:
             )
 
         grupo.delete()
+
+    @staticmethod
+    def listar_alunos_do_grupo(grupo_id: int):
+        """
+        Retorna todos os alunos de um grupo específico.
+        """
+        try:
+            grupo = Grupo.objects.get(id=grupo_id)
+        except Grupo.DoesNotExist as exc:
+            raise serializers.ValidationError(
+                {"id": "Grupo não encontrado."}
+            ) from exc
+
+        return grupo.alunos.all()
