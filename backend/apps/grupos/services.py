@@ -12,7 +12,6 @@ class GrupoService:
         """
         return Grupo.objects.all()
     
-
     @staticmethod
     def buscar_por_id(grupo_id: int) -> Grupo:
         """
@@ -43,3 +42,30 @@ class GrupoService:
             setattr(grupo, campo, valor)
         grupo.save()
         return grupo
+    
+    @staticmethod
+    def deletar_grupo(grupo_id: int) -> None:
+        """
+        Deleta um grupo.
+        Regras:
+        - Não pode deletar se tiver alunos vinculados
+        - Não pode deletar se tiver projeto ativo
+        """
+        try:
+            grupo = Grupo.objects.get(id=grupo_id)
+        except Grupo.DoesNotExist as exc:
+            raise serializers.ValidationError(
+                {"id": "Grupo não encontrado."}
+            ) from exc
+
+        if grupo.alunos.exists():
+            raise serializers.ValidationError(
+                {"alunos": "Não é possível deletar um grupo que possui alunos vinculados."}
+            )
+
+        if grupo.projetos.filter(status="Ativo").exists():
+            raise serializers.ValidationError(
+                {"projetos": "Não é possível deletar um grupo que possui projeto ativo."}
+            )
+
+        grupo.delete()
