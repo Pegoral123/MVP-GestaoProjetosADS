@@ -11,3 +11,35 @@ class GrupoService:
         Retorna todos os grupos ordenados por data de criação.
         """
         return Grupo.objects.all()
+    
+
+    @staticmethod
+    def buscar_por_id(grupo_id: int) -> Grupo:
+        """
+        Busca um grupo pelo ID.
+        Lança erro 404 se não encontrar.
+        """
+        try:
+            return Grupo.objects.get(id=grupo_id)
+        except Grupo.DoesNotExist as exc:
+            raise serializers.ValidationError(
+                {"id": "Grupo não encontrado."}
+            ) from exc
+
+    @staticmethod
+    def criar_grupo(data: dict) -> Grupo:
+        """
+        Cria um novo grupo.
+        Validações de unicidade já foram feitas no serializer.
+        """
+        return Grupo.objects.create(**data)
+    
+    @staticmethod
+    def atualizar_grupo(grupo: Grupo, data: dict) -> Grupo:
+        """
+        Atualiza os dados de um grupo.
+        """
+        for campo, valor in data.items():
+            setattr(grupo, campo, valor)
+        grupo.save()
+        return grupo
