@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from drf_spectacular.utils import extend_schema_field
 from apps.grupos.models import Grupo
 
 
@@ -46,12 +46,14 @@ class GrupoSerializer(serializers.ModelSerializer):
             "total_alunos",
         )
 
+    @extend_schema_field(ProjetoResumoSerializer)
     def get_projeto(self, obj):
         projeto = obj.projetos.filter(status="Ativo").first()
         if projeto:
             return ProjetoResumoSerializer(projeto).data
         return None
-
+    
+    @extend_schema_field(serializers.IntegerField)
     def get_total_alunos(self, obj):
         return obj.alunos.count()
 
