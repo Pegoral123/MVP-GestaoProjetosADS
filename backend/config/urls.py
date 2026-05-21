@@ -8,6 +8,7 @@ urlpatterns = [
     # ── Apps do projeto ────────────────────────────────────────────
     path("api/v1/auth/", include("apps.authentication.urls")),
     path("api/v1/alunos/", include("apps.alunos.urls")),
+    path("api/v1/grupos/", include("apps.grupos.urls")),
 
     # ── Swagger ────────────────────────────────────────────────────
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
