@@ -17,7 +17,7 @@ from apps.authentication.serializers import (
 )
 from apps.authentication.services import AuthService
 
-
+@extend_schema(tags=["Autenticação"])
 class RegisterView(APIView):
     """
     Endpoint para registro de novos usuários.
@@ -50,8 +50,7 @@ class RegisterView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-
-
+@extend_schema(tags=["Autenticação"])
 class LogoutView(APIView):
     """
     Endpoint para logout — invalida o refresh token
@@ -95,7 +94,7 @@ class LogoutView(APIView):
             status=status.HTTP_200_OK,
         )
 
-
+@extend_schema(tags=["Autenticação"])
 class ChangePasswordView(APIView):
     """
     Endpoint para alterar senha do usuário logado.
@@ -134,7 +133,7 @@ class ChangePasswordView(APIView):
             status=status.HTTP_200_OK,
         )
 
-
+@extend_schema(tags=["Autenticação"])
 class UserListView(generics.ListAPIView):
     """
     Endpoint para listar todos os usuários.
@@ -145,8 +144,29 @@ class UserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserReponseSerializer
     queryset = CustomUser.objects.all().order_by("-date_joined")
+    
 
+@extend_schema(tags=["Autenticação"])
+class UsuarioLogadoView(APIView):
+    """
+    Retorna os dados do usuário logado.
+    GET /api/v1/auth/me/
+    """
 
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=UserReponseSerializer)
+    def get(self, request):
+        serializer = UserReponseSerializer(request.user)
+        return Response(
+            {
+                "data": serializer.data,
+                "message": "Usuário autenticado.",
+                "statusCode": status.HTTP_200_OK,
+            },
+            status=status.HTTP_200_OK,
+        )
+@extend_schema(tags=["Autenticação"])
 class DeactivateUserView(APIView):
     """
     Endpoint para desativar conta de um usuário.
@@ -167,3 +187,4 @@ class DeactivateUserView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+    

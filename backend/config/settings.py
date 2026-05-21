@@ -90,6 +90,50 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "API do sistema de gerenciamento de projetos ADS",
     "VERSION": "1.0.0",
     "COMPONENT_SPLIT_REQUEST": True,
+    "SERVE_INCLUDE_SCHEMA": False,
+    "TAGS": [
+        {
+            "name": "Autenticação",
+            "description": (
+                "Endpoints responsáveis pelo controle de acesso ao sistema. "
+                "Inclui login, geração e renovação de tokens JWT, logout com "
+                "invalidação de sessão, cadastro de novos usuários, alteração "
+                "de senha e consulta do perfil do usuário logado."
+            ),
+        },
+        {
+            "name": "Alunos",
+            "description": (
+                "Endpoints para gerenciamento completo dos alunos. "
+                "Permite cadastrar, listar, buscar, editar, excluir e "
+                "vincular alunos a grupos de projeto."
+            ),
+        },
+        {
+            "name": "Grupos",
+            "description": (
+                "Endpoints para gerenciamento das equipes de projeto. "
+                "Permite criar, listar, editar e excluir grupos, além de "
+                "consultar os alunos vinculados a cada equipe."
+            ),
+        },
+        {
+            "name": "Projetos",
+            "description": (
+                "Endpoints para gerenciamento dos projetos MVP. "
+                "Permite criar, listar, editar e excluir projetos, "
+                "com controle de status entre em andamento e concluído."
+            ),
+        },
+        {
+            "name": "Entregas",
+            "description": (
+                "Endpoints para gerenciamento das entregas e apresentações. "
+                "Permite registrar entregas, marcar como apresentadas e "
+                "adicionar links de apresentação por projeto."
+            ),
+        },
+    ],
     "APPEND_COMPONENTS": {
         "securitySchemes": {
             "bearerAuth": {
@@ -123,5 +167,4 @@ SIMPLE_JWT = {
 
 # Arquivos estaticos
 STATIC_URL = 'static/'
-
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

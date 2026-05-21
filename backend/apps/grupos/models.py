@@ -88,4 +88,3 @@ class Grupo(models.Model):
 
     def __repr__(self) -> str:
         return f"<Grupo: {self.codigo} - {self.status}>"
-
