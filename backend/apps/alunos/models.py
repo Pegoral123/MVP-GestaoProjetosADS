@@ -9,12 +9,6 @@ class Aluno(models.Model):
     e associação com um grupo de projeto.
     """
 
-    id = models.AutoField(
-        primary_key=True,
-        verbose_name="ID",
-        help_text="Identificador único do aluno",
-    )
-
     nome = models.CharField(
         max_length=100,
         verbose_name=("Nome Completo"),
@@ -43,15 +37,15 @@ class Aluno(models.Model):
         help_text="Número de matrícula único do aluno",
     )
 
-    grupo = models.ForeignKey(
+    grupos = models.ManyToManyField(
         "grupos.Grupo",
-        on_delete=models.SET_NULL,
-        null=True,
+        through="AlunoGrupo",
         blank=True,
         related_name="alunos",
-        verbose_name="Grupo",
-        help_text="Grupo ao qual o aluno pertence",
+        verbose_name="Grupos",
+        help_text="Grupos aos quais o aluno pertence",
     )
+
 
     criado_em = models.DateTimeField(
         auto_now_add=True,
@@ -71,3 +65,6 @@ class Aluno(models.Model):
     def __str__(self) -> str:
         """Representação do aluno."""
         return f"{self.nome} ({self.matricula})"
+    
+    def __repr__(self) -> str:
+        return f"<Aluno: {self.matricula} - {self.nome}>"
