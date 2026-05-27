@@ -26,7 +26,6 @@ class GrupoSerializer(serializers.ModelSerializer):
         model = Grupo
         fields = (
             "id",
-            "codigo",
             "nome",
             "data",
             "periodo",
@@ -67,7 +66,6 @@ class CriarGrupoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Grupo
         fields = (
-            "codigo",
             "nome",
             "data",
             "periodo",
@@ -75,11 +73,6 @@ class CriarGrupoSerializer(serializers.ModelSerializer):
             "github_url",
             "status",
         )
-
-    def validate_codigo(self, value):
-        if Grupo.objects.filter(codigo=value).exists():
-            raise serializers.ValidationError("Código já está em uso.")
-        return value
 
 
 class AtualizarGrupoSerializer(serializers.ModelSerializer):
@@ -91,7 +84,6 @@ class AtualizarGrupoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Grupo
         fields = (
-            "codigo",
             "nome",
             "data",
             "periodo",
@@ -99,10 +91,3 @@ class AtualizarGrupoSerializer(serializers.ModelSerializer):
             "github_url",
             "status",
         )
-
-    def validate_codigo(self, value):
-        if Grupo.objects.filter(codigo=value).exclude(
-            pk=self.instance.pk
-        ).exists():
-            raise serializers.ValidationError("Código já está em uso.")
-        return value
