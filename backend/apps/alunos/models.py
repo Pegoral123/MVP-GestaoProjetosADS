@@ -80,24 +80,12 @@ class AlunoGrupo(models.Model):
         "Aluno",
         on_delete=models.CASCADE,
         related_name="aluno_grupos",
-        verbose_name="Aluno",
     )
 
     grupo = models.ForeignKey(
         "grupos.Grupo",
         on_delete=models.CASCADE,
         related_name="aluno_grupos",
-        verbose_name="Grupo",
-    )
-
-    projeto = models.ForeignKey(
-        "projetos.Projeto",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="aluno_grupos",
-        verbose_name="Projeto",
-        help_text="Projeto de referência da nota",
     )
 
     nota = models.DecimalField(
@@ -109,14 +97,5 @@ class AlunoGrupo(models.Model):
         help_text="Nota do aluno nesse grupo (0 a 10)",
     )
 
-    criado_em = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Criado em",
-    )
-
     class Meta:
         unique_together = ("aluno", "grupo")
-        ordering = ["grupo", "aluno"]
-
-    def __str__(self) -> str:
-        return f"{self.aluno.nome} — {self.grupo.nome} — Nota: {self.nota}"
