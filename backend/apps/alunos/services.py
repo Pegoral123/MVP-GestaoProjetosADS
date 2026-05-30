@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.alunos.models import Aluno
+from apps.alunos.models import Aluno, AlunoGrupo
 
 
 class AlunoService:
@@ -64,11 +64,14 @@ class AlunoService:
         aluno.delete()
 
     @staticmethod
-    def vincular_grupo(aluno: Aluno, grupo) -> Aluno:
+    def vincular_grupo(aluno: Aluno, grupo) -> AlunoGrupo:
         """
-        Vincula ou desvincula um aluno de um grupo.
-        Passa None para desvincular.
+        Vincula um aluno a um grupo.
+        Regra: aluno não pode ser vinculado ao mesmo grupo duas vezes.
         """
-        aluno.grupo = grupo
-        aluno.save()
-        return aluno
+        if AlunoGrupo.objects.filter(aluno=aluno, grupo=grupo).exists():
+            raise serializers.ValidationError(
+                {"grupo": "Aluno já está vinculado a esse grupo."}
+            )
+
+        return AlunoGrupo.objects.create(aluno=aluno, grupo=grupo)
