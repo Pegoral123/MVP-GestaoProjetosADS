@@ -220,3 +220,101 @@ class VincularGrupoView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+@extend_schema(tags=["Alunos"])
+class DesvincularGrupoView(APIView):
+    """
+    Desvincula um aluno de um grupo.
+    POST /api/v1/alunos/{id}/desvincular-grupo/
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=DesvincularGrupoSerializer, responses=AlunoSerializer)
+    def post(self, request, pk):
+        aluno = AlunoService.buscar_por_id(pk)
+        serializer = DesvincularGrupoSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "message": "Dados inválidos.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            AlunoService.desvincular_grupo(
+                aluno,
+                serializer.validated_data["grupo"],
+            )
+        except serializers.ValidationError as e:
+            return Response(
+                {
+                    "message": "Não foi possível desvincular o aluno do grupo.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": e.detail,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "data": AlunoSerializer(aluno).data,
+                "message": "Aluno desvinculado do grupo com sucesso.",
+                "statusCode": status.HTTP_200_OK,
+            },
+            status=status.HTTP_200_OK,
+        )
+    
+    
+@extend_schema(tags=["Alunos"])
+class LancarNotaView(APIView):
+    """
+    Lança ou atualiza a nota do aluno em um grupo.
+    PATCH /api/v1/alunos/{id}/lancar-nota/
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=LancarNotaSerializer, responses=AlunoGrupoSerializer)
+    def patch(self, request, pk):
+        aluno = AlunoService.buscar_por_id(pk)
+        serializer = LancarNotaSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "message": "Dados inválidos.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            vinculo = AlunoService.lancar_nota(
+                aluno,
+                serializer.validated_data["grupo"],
+                serializer.validated_data["nota"],
+            )
+        except serializers.ValidationError as e:
+            return Response(
+                {
+                    "message": "Não foi possível lançar a nota.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": e.detail,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "data": AlunoGrupoSerializer(vinculo).data,
+                "message": "Nota lançada com sucesso.",
+                "statusCode": status.HTTP_200_OK,
+            },
+            status=status.HTTP_200_OK,
+        )
