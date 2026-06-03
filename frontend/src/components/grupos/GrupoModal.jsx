@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { X, Hash, Edit, Trash2, AlertTriangle, Users, Calendar, Layers, FolderGit2, Link2, FolderOpen, ChevronDown, CheckCircle } from "lucide-react"
+import { X, Hash, Edit, Trash2, AlertTriangle, Users, Calendar, Layers, FolderGit2, Link2, FolderOpen, ChevronDown, CheckCircle, Star, MinusCircle } from "lucide-react"
 import { Button } from "../ui/button"
 import { useNavigate } from "react-router-dom"
 import api from "../../services/api"
@@ -9,17 +9,33 @@ function GrupoModal({ grupo, onClose, onDelete }) {
     const [isConfirming, setIsConfirming] = useState(false)
     const [membrosExpandido, setMembrosExpandido] = useState(false)
     const [alunosData, setAlunosData] = useState([])
+    const [notasGrupo, setNotasGrupo] = useState({})
 
     useEffect(() => {
         if (!grupo) {
             setIsConfirming(false)
             setMembrosExpandido(false)
+            setNotasGrupo({})
         } else {
+            // Buscar notas do grupo a partir do localStorage
+            const storedGrupos = localStorage.getItem("grupos_mock")
+            if (storedGrupos) {
+                const gruposArr = JSON.parse(storedGrupos)
+                const found = gruposArr.find(g => g.id === grupo.id)
+                setNotasGrupo(found?.notas || {})
+            } else {
+                setNotasGrupo(grupo.notas || {})
+            }
+
             const fetchMembros = async () => {
                 if (grupo.alunos?.length > 0) {
                     try {
                         const res = await api.get('/api/v1/alunos/');
-                        const todosAlunos = Array.isArray(res.data) ? res.data : (res.data.results || []);
+                        let todosAlunos = [];
+                        if (Array.isArray(res.data)) todosAlunos = res.data;
+                        else if (res.data?.results) todosAlunos = res.data.results;
+                        else if (res.data?.data) todosAlunos = res.data.data;
+                        else if (res.data?.alunos) todosAlunos = res.data.alunos;
                         const membros = todosAlunos.filter(a => grupo.alunos.includes(a.id));
                         setAlunosData(membros);
                     } catch (error) {
@@ -177,26 +193,42 @@ function GrupoModal({ grupo, onClose, onDelete }) {
                         </button>
                     </div>
 
-                    {/* Lista de membros expandível */}
+                    {/* Lista de membros expandível com notas */}
                     {membrosExpandido && (
                         <div className="border border-gray-100 rounded-xl overflow-hidden">
                             {alunosData.length === 0 ? (
                                 <p className="text-sm text-gray-400 text-center py-4 italic">Nenhum aluno vinculado a este grupo.</p>
                             ) : (
-                                <div className="divide-y divide-gray-100 max-h-40 overflow-y-auto">
-                                    {alunosData.map((aluno) => (
-                                        <div key={aluno.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
-                                            <div className="bg-[#006b64]/10 rounded-full w-8 h-8 flex items-center justify-center shrink-0">
-                                                <span className="text-[#006b64] font-bold text-xs">
-                                                    {aluno.nome?.split(" ").map(n => n[0]).slice(0, 2).join("")}
-                                                </span>
+                                <div className="divide-y divide-gray-100 max-h-52 overflow-y-auto">
+                                    {alunosData.map((aluno) => {
+                                        const nota = notasGrupo[aluno.id]
+                                        const temNota = nota !== undefined && nota !== "" && nota !== null
+                                        return (
+                                            <div key={aluno.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                                                <div className="bg-[#006b64]/10 rounded-full w-8 h-8 flex items-center justify-center shrink-0">
+                                                    <span className="text-[#006b64] font-bold text-xs">
+                                                        {aluno.nome?.split(" ").map(n => n[0]).slice(0, 2).join("")}
+                                                    </span>
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-medium text-gray-800 truncate">{aluno.nome}</p>
+                                                    <p className="text-xs text-gray-400">{aluno.matricula}</p>
+                                                </div>
+                                                {/* Nota individual (somente leitura) */}
+                                                {temNota ? (
+                                                    <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 px-2.5 py-1 rounded-lg shrink-0">
+                                                        <Star size={12} className="fill-green-500 text-green-500" />
+                                                        <span className="text-xs font-bold">{Number(nota).toFixed(1)}</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-1.5 bg-gray-100 border border-gray-200 text-gray-400 px-2.5 py-1 rounded-lg shrink-0">
+                                                        <MinusCircle size={12} />
+                                                        <span className="text-xs font-medium">Sem nota</span>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-800 truncate">{aluno.nome}</p>
-                                                <p className="text-xs text-gray-400">{aluno.matricula}</p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                             )}
                         </div>

@@ -9,6 +9,8 @@ import Perfil from './pages/Perfil'
 import ListaProjetos from './pages/ListaProjetos'
 import ProjetoForm from './pages/ProjetoForm'
 import Dashboard from './pages/Dashboard'
+import RegistroEntregas from './pages/RegistroEntregas'
+import AvaliacaoGrupo from './pages/AvaliacaoGrupo'
 import Layout from './components/layout/Layout'
 import PrivateRoute from './components/PrivateRoute'
 import { AuthProvider } from './context/AuthContext'
@@ -44,6 +46,10 @@ function App() {
 
             {/*Dashboard*/}
             <Route path="/dashboard" element={<Dashboard />} />
+
+            {/*Entregas*/}
+            <Route path="/entregas" element={<RegistroEntregas />} />
+            <Route path="/entregas/avaliar/:id" element={<AvaliacaoGrupo />} />
           </Route>
         </Route>
       </Routes>
