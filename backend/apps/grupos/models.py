@@ -2,16 +2,19 @@ from django.db import models
 
 
 class Grupo(models.Model):
-    """
-    Representa um grupo de alunos vinculado a um projeto.
-    """
 
     class Periodo(models.TextChoices):
-        PRIMEIRO  = "1º Semestre", "1º Semestre"
-        SEGUNDO   = "2º Semestre", "2º Semestre"
-        TERCEIRO  = "3º Semestre", "3º Semestre"
-        QUARTO    = "4º Semestre", "4º Semestre"
-        QUINTO    = "5º Semestre", "5º Semestre"
+        PRIMEIRO_TRIMESTRE = "1º Trimestre", "1º Trimestre"
+        SEGUNDO_TRIMESTRE  = "2º Trimestre", "2º Trimestre"
+        TERCEIRO_TRIMESTRE = "3º Trimestre", "3º Trimestre"
+        QUARTO_TRIMESTRE   = "4º Trimestre", "4º Trimestre"
+        QUINTO_TRIMESTRE   = "5º Trimestre", "5º Trimestre"
+        SEXTO_TRIMESTRE    = "6º Trimestre", "6º Trimestre"
+        PRIMEIRO_SEMESTRE  = "1º Semestre",  "1º Semestre"
+        SEGUNDO_SEMESTRE   = "2º Semestre",  "2º Semestre"
+        TERCEIRO_SEMESTRE  = "3º Semestre",  "3º Semestre"
+        QUARTO_SEMESTRE    = "4º Semestre",  "4º Semestre"
+        QUINTO_SEMESTRE    = "5º Semestre",  "5º Semestre"
 
     class MVP(models.TextChoices):
         FRONTEND = "Frontend", "Frontend"
@@ -21,13 +24,6 @@ class Grupo(models.Model):
     class Status(models.TextChoices):
         EM_ANDAMENTO = "Em andamento", "Em andamento"
         CONCLUIDO    = "Concluído",    "Concluído"
-
-    codigo = models.CharField(
-        max_length=20,
-        unique=True,
-        verbose_name="Código",
-        help_text="Código único do grupo. Ex: FE-001, BE-002",
-    )
 
     nome = models.CharField(
         max_length=100,
@@ -84,7 +80,7 @@ class Grupo(models.Model):
         ordering = ["-criado_em"]
 
     def __str__(self) -> str:
-        return f"{self.codigo} — {self.nome}"
+        return f"{self.nome}"
 
     def __repr__(self) -> str:
-        return f"<Grupo: {self.codigo} - {self.status}>"
+        return f"<Grupo: {self.nome} - {self.status}>"

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.alunos.models import Aluno
+from apps.alunos.models import Aluno, AlunoGrupo
 
 
 class AlunoService:
@@ -56,7 +56,7 @@ class AlunoService:
                 {"id": "Aluno não encontrado."}
             ) from exc
 
-        if aluno.grupo is not None:
+        if aluno.aluno_grupos.exists():
             raise serializers.ValidationError(
                 {"grupo": "Não é possível deletar um aluno vinculado a um grupo."}
             )
@@ -64,11 +64,46 @@ class AlunoService:
         aluno.delete()
 
     @staticmethod
-    def vincular_grupo(aluno: Aluno, grupo) -> Aluno:
+    def vincular_grupo(aluno: Aluno, grupo) -> AlunoGrupo:
         """
-        Vincula ou desvincula um aluno de um grupo.
-        Passa None para desvincular.
+        Vincula um aluno a um grupo.
+        Regra: aluno não pode ser vinculado ao mesmo grupo duas vezes.
         """
-        aluno.grupo = grupo
-        aluno.save()
-        return aluno
+        if AlunoGrupo.objects.filter(aluno=aluno, grupo=grupo).exists():
+            raise serializers.ValidationError(
+                {"grupo": "Aluno já está vinculado a esse grupo."}
+            )
+
+        return AlunoGrupo.objects.create(aluno=aluno, grupo=grupo)
+    
+    @staticmethod
+    def desvincular_grupo(aluno: Aluno, grupo) -> None:
+        """
+        Desvincula um aluno de um grupo.
+        Regra: vínculo precisa existir para ser removido.
+        """
+        try:
+            vinculo = AlunoGrupo.objects.get(aluno=aluno, grupo=grupo)
+        except AlunoGrupo.DoesNotExist as exc:
+            raise serializers.ValidationError(
+                {"grupo": "Aluno não está vinculado a esse grupo."}
+            ) from exc
+
+        vinculo.delete()
+
+    @staticmethod
+    def lancar_nota(aluno: Aluno, grupo, nota) -> AlunoGrupo:
+        """
+        Lança ou atualiza a nota do aluno em um grupo.
+        Regra: vínculo precisa existir antes de lançar nota.
+        """
+        try:
+            vinculo = AlunoGrupo.objects.get(aluno=aluno, grupo=grupo)
+        except AlunoGrupo.DoesNotExist as exc:
+            raise serializers.ValidationError(
+                {"grupo": "Aluno não está vinculado a esse grupo. Vincule primeiro."}
+            ) from exc
+
+        vinculo.nota = nota
+        vinculo.save()
+        return vinculo
