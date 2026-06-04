@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (username, password) => {
         try {
-            const response = await api.post('/api/v1/auth/token/', { username, password });
+            const response = await api.post('/auth/token/', { username, password });
             const { access, refresh } = response.data;
 
             localStorage.setItem('access_token', access);
@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
             const refresh = localStorage.getItem('refresh_token');
             if (refresh) {
                 const token = localStorage.getItem('access_token');
-                await api.post('/api/v1/auth/logout/', { refresh }, {
+                await api.post('auth/logout/', { refresh }, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }

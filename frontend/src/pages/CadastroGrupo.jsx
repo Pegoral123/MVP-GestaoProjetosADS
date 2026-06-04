@@ -19,6 +19,7 @@ import {
     Clock
 } from "lucide-react"
 import api from "../services/api"
+import { buscarGrupo, criarGrupo, atualizarGrupo, listarAlunosDoGrupo, vincularAlunoAoGrupo, listarGrupos } from "../services/grupoService"
 
 function CadastroGrupo() {
     const navigate = useNavigate()
@@ -30,7 +31,6 @@ function CadastroGrupo() {
         codigo: "",
         nome: "",
         data: new Date().toISOString().split('T')[0],
-        ano: new Date().getFullYear().toString(),
         periodo: "",
         mvp: "",
         alunos: [],
@@ -46,27 +46,37 @@ function CadastroGrupo() {
     const [dropdownAberto, setDropdownAberto] = useState(false)
     const [errors, setErrors] = useState({})
     const [successMsg, setSuccessMsg] = useState("")
+    const [initialAlunos, setInitialAlunos] = useState([])
+    const [proximoId, setProximoId] = useState(1)
 
     useEffect(() => {
         const fetchAlunos = async () => {
             try {
-                const res = await api.get('/api/v1/alunos/');
-                let data = [];
-                if (Array.isArray(res.data)) {
-                    data = res.data;
-                } else if (res.data && Array.isArray(res.data.results)) {
-                    data = res.data.results;
-                } else if (res.data && Array.isArray(res.data.data)) {
-                    data = res.data.data;
-                } else if (res.data && Array.isArray(res.data.alunos)) {
-                    data = res.data.alunos;
-                }
+                const res = await api.get('alunos/');
+                const dataObj = res.data?.data ?? res.data;
+                const data = Array.isArray(dataObj) ? dataObj : dataObj?.results || [];
                 setAlunos(data);
             } catch (error) {
                 console.error("Erro ao buscar alunos", error);
             }
         };
         fetchAlunos();
+
+        const fetchProximoId = async () => {
+            try {
+                const gruposExistentes = await listarGrupos();
+                let maxId = 0;
+                gruposExistentes.forEach(g => {
+                    if (g.id > maxId) maxId = g.id;
+                });
+                setProximoId(maxId + 1);
+            } catch (error) {
+                console.error("Erro ao buscar grupos para calcular próximo ID", error);
+            }
+        };
+        if (!isEdit) {
+            fetchProximoId();
+        }
 
         const staticProjetos = [
             "Sistema de Gestão Acadêmica",
@@ -93,25 +103,35 @@ function CadastroGrupo() {
         }
 
         if (isEdit) {
-            const storedGrupos = localStorage.getItem("grupos_mock")
-            if (storedGrupos) {
-                const gruposMock = JSON.parse(storedGrupos)
-                const grupoEdit = gruposMock.find((g) => g.id.toString() === id)
-                if (grupoEdit) {
-                    setFormData({
-                        codigo: grupoEdit.codigo || "",
-                        nome: grupoEdit.nome || "",
-                        data: grupoEdit.data || "",
-                        ano: grupoEdit.ano || "",
-                        periodo: grupoEdit.periodo || "",
-                        mvp: grupoEdit.mvp || "",
-                        alunos: grupoEdit.alunos || [],
-                        projeto: grupoEdit.projeto || "",
-                        githubUrl: grupoEdit.githubUrl || "",
-                        status: grupoEdit.status || "Em andamento"
-                    })
+            const fetchGrupo = async () => {
+                try {
+                    const grupoEdit = await buscarGrupo(id)
+                    if (grupoEdit) {
+                        let selectedAlunosIds = []
+                        try {
+                            const membros = await listarAlunosDoGrupo(id)
+                            selectedAlunosIds = membros.map(m => m.id)
+                        } catch (err) {
+                            console.error("Erro ao buscar alunos do grupo:", err)
+                        }
+                        setFormData({
+                            codigo: grupoEdit.codigo || "",
+                            nome: grupoEdit.nome || "",
+                            data: grupoEdit.data || "",
+                            periodo: grupoEdit.periodo || "",
+                            mvp: grupoEdit.mvp || "",
+                            alunos: selectedAlunosIds,
+                            projeto: grupoEdit.projeto?.nome || "",
+                            githubUrl: grupoEdit.githubUrl || grupoEdit.github_url || "",
+                            status: grupoEdit.status || "Em andamento"
+                        })
+                        setInitialAlunos(selectedAlunosIds)
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar grupo para edição:", error)
                 }
             }
+            fetchGrupo()
         }
     }, [id, isEdit])
 
@@ -127,7 +147,18 @@ function CadastroGrupo() {
 
     const handleChange = (e) => {
         const { name, value } = e.target
-        setFormData(prev => ({ ...prev, [name]: value }))
+        setFormData(prev => {
+            const nextData = { ...prev, [name]: value }
+            if (name === "mvp" && !isEdit) {
+                const prefix = value === "Frontend" ? "FE" : value === "Backend" ? "BE" : value === "Mobile" ? "MB" : "";
+                if (prefix) {
+                    nextData.codigo = `${prefix}-${String(proximoId).padStart(3, '0')}`;
+                } else {
+                    nextData.codigo = "";
+                }
+            }
+            return nextData
+        })
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: null }))
         }
@@ -148,25 +179,15 @@ function CadastroGrupo() {
         })
     }
 
-    const validate = () => {
+    const validate = (data = formData) => {
         const newErrors = {}
-        if (!formData.codigo.trim()) newErrors.codigo = "Código é obrigatório."
-        if (!formData.nome.trim()) newErrors.nome = "Nome é obrigatório."
-        if (!formData.data) newErrors.data = "Data é obrigatória."
-        if (!formData.ano) newErrors.ano = "Ano é obrigatório."
-        if (!formData.periodo) newErrors.periodo = "Período é obrigatório."
-        if (!formData.mvp) newErrors.mvp = "MVP é obrigatório."
-        if (formData.alunos.length === 0) newErrors.alunos = "Selecione ao menos um aluno."
-        if (formData.githubUrl && !formData.githubUrl.match(/^https?:\/\/(www\.)?github\.com\/.+/i)) {
+        if (!data.nome.trim()) newErrors.nome = "Nome é obrigatório."
+        if (!data.data) newErrors.data = "Data é obrigatória."
+        if (!data.periodo) newErrors.periodo = "Período é obrigatório."
+        if (!data.mvp) newErrors.mvp = "MVP é obrigatório."
+        if (data.alunos.length === 0) newErrors.alunos = "Selecione ao menos um aluno."
+        if (data.githubUrl && !data.githubUrl.match(/^https?:\/\/(www\.)?github\.com\/.+/i)) {
             newErrors.githubUrl = "Informe um link válido do GitHub."
-        }
-
-        const storedGrupos = localStorage.getItem("grupos_mock")
-        let gruposMock = storedGrupos ? JSON.parse(storedGrupos) : []
-        const isDuplicate = gruposMock.some(g => g.codigo === formData.codigo && g.id.toString() !== id)
-
-        if (formData.codigo && isDuplicate) {
-            newErrors.codigo = "Código da equipe já está em uso."
         }
 
         setErrors(newErrors)
@@ -175,51 +196,77 @@ function CadastroGrupo() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        if (!validate()) return
 
-        const payload = {
+        let currentCodigo = formData.codigo;
+        if (!isEdit && (!currentCodigo || currentCodigo.trim() === "")) {
+            const prefix = formData.mvp === "Frontend" ? "FE" : formData.mvp === "Backend" ? "BE" : formData.mvp === "Mobile" ? "MB" : "GP";
+            currentCodigo = `${prefix}-${String(proximoId).padStart(3, '0')}`;
+        }
+
+        const dataToSave = {
             ...formData,
-            id: isEdit ? parseInt(id) : Date.now(),
-        }
+            codigo: currentCodigo
+        };
 
-        const storedGrupos = localStorage.getItem("grupos_mock")
-        let gruposMock = storedGrupos ? JSON.parse(storedGrupos) : []
+        if (!validate(dataToSave)) return
 
-        let oldAlunos = [];
-
-        if (isEdit) {
-            const index = gruposMock.findIndex((g) => g.id.toString() === id)
-            if (index !== -1) {
-                oldAlunos = gruposMock[index].alunos || [];
-                gruposMock[index] = payload
-            }
-            setSuccessMsg(`Equipe "${payload.nome}" atualizada com sucesso!`)
-        } else {
-            gruposMock.push(payload)
-            setSuccessMsg(`Equipe "${payload.nome}" cadastrada com sucesso!`)
-        }
-
-        localStorage.setItem("grupos_mock", JSON.stringify(gruposMock))
-
-        // Vincular/desvincular alunos na API
         try {
-            const currentAlunos = payload.alunos;
-            const alunosToLink = currentAlunos.filter(a => !oldAlunos.includes(a));
-            const alunosToUnlink = oldAlunos.filter(a => !currentAlunos.includes(a));
+            let grupoSalvo;
+            if (isEdit) {
+                grupoSalvo = await atualizarGrupo(parseInt(id), dataToSave)
+                setSuccessMsg(`Equipe "${formData.nome}" atualizada com sucesso!`)
+            } else {
+                grupoSalvo = await criarGrupo(dataToSave)
+                setSuccessMsg(`Equipe "${formData.nome}" cadastrada com sucesso!`)
+            }
 
-            for (const alunoId of alunosToLink) {
-                await api.patch(`/api/v1/alunos/${alunoId}/vincular-grupo/`, { grupo: payload.id });
-            }
-            for (const alunoId of alunosToUnlink) {
-                await api.patch(`/api/v1/alunos/${alunoId}/vincular-grupo/`, { grupo: null });
-            }
+            const grupoId = isEdit ? parseInt(id) : grupoSalvo.id
+
+            const aVincular = formData.alunos.filter(alunoId => !initialAlunos.includes(alunoId))
+            const aDesvincular = initialAlunos.filter(alunoId => !formData.alunos.includes(alunoId))
+
+            const promises = [
+                ...aVincular.map(alunoId => vincularAlunoAoGrupo(alunoId, grupoId)),
+                ...aDesvincular.map(alunoId => vincularAlunoAoGrupo(alunoId, null))
+            ]
+
+            await Promise.all(promises)
+
+            setTimeout(() => {
+                navigate("/grupos")
+            }, 1500)
         } catch (error) {
-            console.error("Erro ao vincular alunos no backend", error);
-        }
+            console.error("Erro ao salvar grupo:", error)
+            console.error("Dados detalhados do erro do backend:", error.response?.data)
 
-        setTimeout(() => {
-            navigate("/grupos")
-        }, 1500)
+            let errorMsg = "Erro ao salvar o grupo. Tente novamente."
+            if (error.response?.data) {
+                const dataError = error.response.data
+                if (dataError.errors && typeof dataError.errors === 'object') {
+                    const fieldErrors = Object.entries(dataError.errors).map(([field, msgs]) => {
+                        const m = Array.isArray(msgs) ? msgs.join(', ') : msgs
+                        return `${field}: ${m}`
+                    })
+                    errorMsg = fieldErrors.join(' | ')
+                } else if (typeof dataError === 'object') {
+                    if (dataError.detail) {
+                        errorMsg = dataError.detail
+                    } else {
+                        const fieldErrors = Object.entries(dataError).map(([field, msgs]) => {
+                            if (field === 'message' || field === 'statusCode') return null
+                            const m = Array.isArray(msgs) ? msgs.join(', ') : msgs
+                            return `${field}: ${m}`
+                        }).filter(Boolean)
+                        if (fieldErrors.length > 0) {
+                            errorMsg = fieldErrors.join(' | ')
+                        }
+                    }
+                } else if (typeof dataError === 'string') {
+                    errorMsg = dataError
+                }
+            }
+            setErrors(prev => ({ ...prev, submit: errorMsg }))
+        }
     }
 
     const alunosFiltrados = alunos.filter(a =>
@@ -274,7 +321,7 @@ function CadastroGrupo() {
                                 <Info size={18} />
                                 <span>Identificação do Grupo</span>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className={`grid grid-cols-1 ${isEdit ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
                                 <div className="space-y-1">
                                     <label className="block text-sm font-semibold text-gray-700">Nome da Equipe <span className="text-red-500">*</span></label>
                                     <div className="relative">
@@ -290,21 +337,20 @@ function CadastroGrupo() {
                                     </div>
                                     {errors.nome && <p className="text-xs text-red-500 font-medium">{errors.nome}</p>}
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="block text-sm font-semibold text-gray-700">Código da Equipe <span className="text-red-500">*</span></label>
-                                    <div className="relative">
-                                        <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                        <input
-                                            type="text"
-                                            name="codigo"
-                                            value={formData.codigo}
-                                            onChange={handleChange}
-                                            placeholder="Ex: TIA-2024"
-                                            className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.codigo ? 'border-red-500 bg-red-50' : 'border-gray-300'} outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64] transition-all`}
-                                        />
+                                {isEdit && (
+                                    <div className="space-y-1">
+                                        <label className="block text-sm font-semibold text-gray-700">Código da Equipe</label>
+                                        <div className="relative">
+                                            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                value={formData.codigo}
+                                                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 outline-none bg-gray-50 text-gray-500 cursor-not-allowed"
+                                            />
+                                        </div>
                                     </div>
-                                    {errors.codigo && <p className="text-xs text-red-500 font-medium">{errors.codigo}</p>}
-                                </div>
+                                )}
                                 <div className="space-y-1">
                                     <label className="block text-sm font-semibold text-gray-700">Tipo de MVP <span className="text-red-500">*</span></label>
                                     <div className="relative">
@@ -348,22 +394,16 @@ function CadastroGrupo() {
                                     {errors.data && <p className="text-xs text-red-500 font-medium">{errors.data}</p>}
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="block text-sm font-semibold text-gray-700">Ano Letivo <span className="text-red-500">*</span></label>
+                                    <label className="block text-sm font-semibold text-gray-700">Ano Letivo <span className="text-gray-400 font-normal ml-1">(Derivado da data)</span></label>
                                     <div className="relative">
                                         <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                        <select
-                                            name="ano"
-                                            value={formData.ano}
-                                            onChange={handleChange}
-                                            className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.ano ? 'border-red-500 bg-red-50' : 'border-gray-300'} outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64] bg-white`}
-                                        >
-                                            <option value="">Selecione...</option>
-                                            <option value="2024">2024</option>
-                                            <option value="2025">2025</option>
-                                            <option value="2026">2026</option>
-                                        </select>
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            value={formData.data ? new Date(formData.data).getFullYear() : ''}
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 outline-none bg-gray-50 text-gray-500 cursor-not-allowed"
+                                        />
                                     </div>
-                                    {errors.ano && <p className="text-xs text-red-500 font-medium">{errors.ano}</p>}
                                 </div>
                                 <div className="space-y-1">
                                     <label className="block text-sm font-semibold text-gray-700">Período <span className="text-red-500">*</span></label>
@@ -376,12 +416,11 @@ function CadastroGrupo() {
                                             className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.periodo ? 'border-red-500 bg-red-50' : 'border-gray-300'} outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64] bg-white`}
                                         >
                                             <option value="">Selecione...</option>
-                                            <option value="1º Semestre">1º Semestre</option>
-                                            <option value="2º Semestre">2º Semestre</option>
-                                            <option value="1º Trimestre">1º Trimestre</option>
-                                            <option value="2º Trimestre">2º Trimestre</option>
-                                            <option value="3º Trimestre">3º Trimestre</option>
-                                            <option value="4º Trimestre">4º Trimestre</option>
+                                            <option value={"1\u00BA Semestre"}>1º Semestre</option>
+                                            <option value={"2\u00BA Semestre"}>2º Semestre</option>
+                                            <option value={"3\u00BA Semestre"}>3º Semestre</option>
+                                            <option value={"4\u00BA Semestre"}>4º Semestre</option>
+                                            <option value={"5\u00BA Semestre"}>5º Semestre</option>
                                         </select>
                                     </div>
                                     {errors.periodo && <p className="text-xs text-red-500 font-medium">{errors.periodo}</p>}
@@ -421,12 +460,12 @@ function CadastroGrupo() {
                                         ) : (
                                             alunosFiltrados.map(aluno => (
                                                 <label key={aluno.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${formData.alunos.includes(aluno.id)
-                                                        ? 'border-[#006b64] bg-[#006b64]/5 shadow-sm'
-                                                        : 'border-transparent hover:bg-gray-50'
+                                                    ? 'border-[#006b64] bg-[#006b64]/5 shadow-sm'
+                                                    : 'border-transparent hover:bg-gray-50'
                                                     }`}>
                                                     <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${formData.alunos.includes(aluno.id)
-                                                            ? 'bg-[#006b64] border-[#006b64]'
-                                                            : 'border-gray-300 bg-white'
+                                                        ? 'bg-[#006b64] border-[#006b64]'
+                                                        : 'border-gray-300 bg-white'
                                                         }`}>
                                                         {formData.alunos.includes(aluno.id) && <CheckCircle size={14} className="text-white" />}
                                                     </div>
