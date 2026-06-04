@@ -10,8 +10,8 @@ class AlunoGrupoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = AlunoGrupo
-        fields = ("id", "grupo", "grupo_nome", "projeto_nome", "nota", "criado_em")
-        read_only_fields = ("id", "criado_em", "grupo_nome", "projeto_nome")
+        fields = ("id", "grupo", "grupo_nome", "projeto_nome", "nota")
+        read_only_fields = ("id", "grupo_nome", "projeto_nome")
 
     def get_projeto_nome(self, obj):
         projeto = obj.grupo.projetos.filter(status="Ativo").first()
@@ -33,6 +33,7 @@ class AlunoSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
+        model  = Aluno
         fields = (
             "id",
             "nome",
