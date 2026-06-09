@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 
@@ -13,6 +14,9 @@ DEBUG = True
 # URLs
 ROOT_URLCONF = 'config.urls'
 
+# Auth
+AUTH_USER_MODEL = 'authentication.CustomUser'
+
 # Apps
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -22,19 +26,31 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',                        
+    'rest_framework_simplejwt.token_blacklist',         
     'drf_spectacular',
     'corsheaders',
-    'apps.alunos',
+    'apps.authentication',   
     'apps.grupos',
+    'apps.alunos',
     'apps.projetos',
     'apps.entregas',
-    'apps.authentication',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
 # Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -70,6 +86,75 @@ DATABASES = {
     }
 }
 
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Gerenciamento MVP API",
+    "DESCRIPTION": "API do sistema de gerenciamento de projetos ADS",
+    "VERSION": "1.0.0",
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SERVE_INCLUDE_SCHEMA": False,
+    "TAGS": [
+        {
+            "name": "Autenticação",
+            "description": (
+                "Endpoints responsáveis pelo controle de acesso ao sistema. "
+                "Inclui login, geração e renovação de tokens JWT, logout com "
+                "invalidação de sessão, cadastro de novos usuários, alteração "
+                "de senha e consulta do perfil do usuário logado."
+            ),
+        },
+        {
+            "name": "Alunos",
+            "description": (
+                "Endpoints para gerenciamento completo dos alunos. "
+                "Permite cadastrar, listar, buscar, editar, excluir e "
+                "vincular alunos a grupos de projeto."
+            ),
+        },
+        {
+            "name": "Grupos",
+            "description": (
+                "Endpoints para gerenciamento das equipes de projeto. "
+                "Permite criar, listar, editar e excluir grupos, além de "
+                "consultar os alunos vinculados a cada equipe."
+            ),
+        },
+        {
+            "name": "Projetos",
+            "description": (
+                "Endpoints para gerenciamento dos projetos MVP. "
+                "Permite criar, listar, editar e excluir projetos, "
+                "com controle de status entre em andamento e concluído."
+            ),
+        },
+        {
+            "name": "Entregas",
+            "description": (
+                "Endpoints para gerenciamento das entregas e apresentações. "
+                "Permite registrar entregas, marcar como apresentadas e "
+                "adicionar links de apresentação por projeto."
+            ),
+        },
+    ],
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+    "SECURITY": [{"bearerAuth": []}],
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME':    timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME':   timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS':    True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES':        ('Bearer',),
+}
+
 # Internacionalizacao
 
 
@@ -83,3 +168,10 @@ DATABASES = {
 
 # Arquivos estaticos
 STATIC_URL = 'static/'
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+# CORS
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
