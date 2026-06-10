@@ -66,8 +66,16 @@ export async function listarAlunosDoGrupo(id) {
 }
 
 export async function vincularAlunoAoGrupo(alunoId, grupoId) {
-    const response = await api.patch(`alunos/${alunoId}/vincular-grupo/`, {
+    const response = await api.post(`alunos/${alunoId}/vincular-grupo/`, {
         grupo: grupoId
     });
     return response.data;
 }
+
+export async function desvincularAlunoDoGrupo(alunoId, grupoId) {
+    const response = await api.post(`alunos/${alunoId}/desvincular-grupo/`, {
+        grupo: grupoId
+    });
+    return response.data;
+}
+

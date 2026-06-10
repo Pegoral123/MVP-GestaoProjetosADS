@@ -19,7 +19,7 @@ import {
     Clock
 } from "lucide-react"
 import api from "../services/api"
-import { buscarGrupo, criarGrupo, atualizarGrupo, listarAlunosDoGrupo, vincularAlunoAoGrupo, listarGrupos } from "../services/grupoService"
+import { buscarGrupo, criarGrupo, atualizarGrupo, listarAlunosDoGrupo, vincularAlunoAoGrupo, desvincularAlunoDoGrupo, listarGrupos } from "../services/grupoService"
 
 function CadastroGrupo() {
     const navigate = useNavigate()
@@ -227,7 +227,7 @@ function CadastroGrupo() {
 
             const promises = [
                 ...aVincular.map(alunoId => vincularAlunoAoGrupo(alunoId, grupoId)),
-                ...aDesvincular.map(alunoId => vincularAlunoAoGrupo(alunoId, null))
+                ...aDesvincular.map(alunoId => desvincularAlunoDoGrupo(alunoId, grupoId))
             ]
 
             await Promise.all(promises)
