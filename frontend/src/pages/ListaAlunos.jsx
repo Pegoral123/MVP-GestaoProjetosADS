@@ -19,7 +19,7 @@ function ListaAlunos() {
 
     const carregarAlunos = async () => {
         try {
-            const response = await api.get('/api/v1/alunos/');
+            const response = await api.get('/alunos/');
             let data = [];
             if (Array.isArray(response.data)) {
                 data = response.data;
@@ -44,7 +44,7 @@ function ListaAlunos() {
 
     const handleDeleteAluno = async (id) => {
         try {
-            await api.delete(`/api/v1/alunos/${id}/`);
+            await api.delete(`/alunos/${id}/`);
             setAlunos(alunos.filter((a) => a.id !== id));
             setAlunoSelecionado(null);
         } catch (error) {

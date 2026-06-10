@@ -1,7 +1,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'https://apigerenciamentomvp-production.up.railway.app',
+    baseURL: 'http://localhost:8000/api/v1/',
+    headers: {
+        'Content-Type': 'application/json; charset=utf-8'
+    }
 });
 
 api.interceptors.request.use(
@@ -31,7 +34,7 @@ api.interceptors.response.use(
                     throw new Error('No refresh token available');
                 }
 
-                const response = await axios.post('https://apigerenciamentomvp-production.up.railway.app/api/v1/auth/token/refresh/', {
+                const response = await axios.post('/api/v1/auth/token/refresh/', {
                     refresh: refreshToken
                 });
 
