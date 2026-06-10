@@ -23,7 +23,7 @@ function CadastroAluno() {
         if (isEdit) {
             const fetchAluno = async () => {
                 try {
-                    const response = await api.get(`/api/v1/alunos/${id}/`);
+                    const response = await api.get(`/alunos/${id}/`);
                     let alunoEdit = response.data;
                     if (response.data && response.data.data && typeof response.data.data === 'object' && !Array.isArray(response.data.data)) {
                         alunoEdit = response.data.data;
@@ -33,7 +33,7 @@ function CadastroAluno() {
                     if (Array.isArray(alunoEdit) && alunoEdit.length > 0) {
                         alunoEdit = alunoEdit[0];
                     }
-                    
+
                     setFormData({
                         matricula: alunoEdit.matricula || "",
                         nome: alunoEdit.nome || "",
@@ -79,13 +79,13 @@ function CadastroAluno() {
 
         try {
             if (isEdit) {
-                await api.patch(`/api/v1/alunos/${id}/`, formData)
+                await api.patch(`/alunos/${id}/`, formData)
                 setSuccessMsg(`Aluno "${formData.nome}" atualizado com sucesso!`)
             } else {
-                await api.post('/api/v1/alunos/', formData)
+                await api.post('/alunos/', formData)
                 setSuccessMsg(`Aluno "${formData.nome}" cadastrado com sucesso!`)
             }
-            
+
             setTimeout(() => {
                 navigate("/alunos")
             }, 1500)
@@ -248,4 +248,3 @@ function CadastroAluno() {
 }
 
 export default CadastroAluno
-

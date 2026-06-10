@@ -29,7 +29,7 @@ function Perfil() {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await api.get('/api/v1/auth/me/');
+                const response = await api.get('auth/me/');
                 let userData = response.data;
                 if (userData && userData.data && typeof userData.data === 'object' && !Array.isArray(userData.data)) {
                     userData = userData.data;
@@ -81,7 +81,7 @@ function Perfil() {
         setErrorForm("")
 
         try {
-            await api.post('/api/v1/auth/register/', newAdmin)
+            await api.post('auth/register/', newAdmin)
             setSuccessForm(`Usuário ${newAdmin.username} cadastrado com sucesso!`)
             setNewAdmin({ username: "", email: "", password: "" })
         } catch (err) {
@@ -103,7 +103,7 @@ function Perfil() {
         setErrorPwd("")
 
         try {
-            await api.patch('/api/v1/auth/change-password/', pwdData)
+            await api.patch('auth/change-password/', pwdData)
             setSuccessPwd("Senha alterada com sucesso!")
             setPwdData({ senha_atual: "", nova_senha: "" })
         } catch (err) {

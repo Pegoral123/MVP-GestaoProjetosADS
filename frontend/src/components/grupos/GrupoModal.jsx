@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react"
-import { X, Hash, Edit, Trash2, AlertTriangle, Users, Calendar, Layers, FolderGit2, Link2, FolderOpen, ChevronDown, CheckCircle, Star, MinusCircle } from "lucide-react"
+import { X, Hash, Edit, Trash2, AlertTriangle, Users, Calendar, Layers, FolderGit2, Link2, FolderOpen, ChevronDown, CheckCircle, Star, MinusCircle, Loader2 } from "lucide-react"
 import { Button } from "../ui/button"
 import { useNavigate } from "react-router-dom"
-import api from "../../services/api"
+import { listarAlunosDoGrupo } from "../../services/grupoService"
 
 function GrupoModal({ grupo, onClose, onDelete }) {
     const navigate = useNavigate()
@@ -11,44 +11,38 @@ function GrupoModal({ grupo, onClose, onDelete }) {
     const [alunosData, setAlunosData] = useState([])
     const [notasGrupo, setNotasGrupo] = useState({})
 
+    const [loadingMembros, setLoadingMembros] = useState(false)
+
     useEffect(() => {
         if (!grupo) {
             setIsConfirming(false)
             setMembrosExpandido(false)
             setNotasGrupo({})
+            setAlunosData([])
         } else {
-            // Buscar notas do grupo a partir do localStorage
-            const storedGrupos = localStorage.getItem("grupos_mock")
-            if (storedGrupos) {
-                const gruposArr = JSON.parse(storedGrupos)
-                const found = gruposArr.find(g => g.id === grupo.id)
-                setNotasGrupo(found?.notas || {})
-            } else {
-                setNotasGrupo(grupo.notas || {})
-            }
-
-            const fetchMembros = async () => {
-                if (grupo.alunos?.length > 0) {
-                    try {
-                        const res = await api.get('/api/v1/alunos/');
-                        let todosAlunos = [];
-                        if (Array.isArray(res.data)) todosAlunos = res.data;
-                        else if (res.data?.results) todosAlunos = res.data.results;
-                        else if (res.data?.data) todosAlunos = res.data.data;
-                        else if (res.data?.alunos) todosAlunos = res.data.alunos;
-                        const membros = todosAlunos.filter(a => grupo.alunos.includes(a.id));
-                        setAlunosData(membros);
-                    } catch (error) {
-                        console.error("Erro ao carregar membros do grupo", error);
-                        setAlunosData([]);
-                    }
-                } else {
-                    setAlunosData([]);
-                }
-            };
-            fetchMembros();
+            // Notas ainda não têm API aqui
+            setNotasGrupo({})
         }
     }, [grupo])
+
+    useEffect(() => {
+        if (!grupo || !membrosExpandido) return
+        if (alunosData.length > 0) return
+
+        const fetchMembros = async () => {
+            setLoadingMembros(true)
+            try {
+                const membros = await listarAlunosDoGrupo(grupo.id)
+                setAlunosData(membros)
+            } catch (error) {
+                console.error("Erro ao carregar membros do grupo", error)
+                setAlunosData([])
+            } finally {
+                setLoadingMembros(false)
+            }
+        }
+        fetchMembros()
+    }, [grupo, membrosExpandido])
 
     if (!grupo) return null
 
@@ -159,7 +153,7 @@ function GrupoModal({ grupo, onClose, onDelete }) {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-400 font-medium">Ano</p>
-                                <p className="text-sm text-gray-700 font-semibold">{grupo.ano}</p>
+                                <p className="text-sm text-gray-700 font-semibold">{grupo.ano || (grupo.data ? new Date(grupo.data).getFullYear() : '—')}</p>
                             </div>
                         </div>
 
@@ -187,16 +181,20 @@ function GrupoModal({ grupo, onClose, onDelete }) {
                             </div>
                             <div className="flex-1">
                                 <p className="text-xs text-gray-400 font-medium">Alunos</p>
-                                <p className="text-sm text-gray-700 font-semibold">{grupo.alunos?.length || 0} membros</p>
+                                <p className="text-sm text-gray-700 font-semibold">{grupo.totalAlunos ?? grupo.total_alunos ?? 0} membros</p>
                             </div>
                             <ChevronDown size={14} className={`text-gray-400 transition-transform ${membrosExpandido ? "rotate-180" : ""}`} />
                         </button>
                     </div>
 
-                    {/* Lista de membros expandível com notas */}
                     {membrosExpandido && (
                         <div className="border border-gray-100 rounded-xl overflow-hidden">
-                            {alunosData.length === 0 ? (
+                            {loadingMembros ? (
+                                <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
+                                    <Loader2 size={18} className="animate-spin" />
+                                    <span className="text-sm">Carregando membros...</span>
+                                </div>
+                            ) : alunosData.length === 0 ? (
                                 <p className="text-sm text-gray-400 text-center py-4 italic">Nenhum aluno vinculado a este grupo.</p>
                             ) : (
                                 <div className="divide-y divide-gray-100 max-h-52 overflow-y-auto">
@@ -214,7 +212,6 @@ function GrupoModal({ grupo, onClose, onDelete }) {
                                                     <p className="text-sm font-medium text-gray-800 truncate">{aluno.nome}</p>
                                                     <p className="text-xs text-gray-400">{aluno.matricula}</p>
                                                 </div>
-                                                {/* Nota individual (somente leitura) */}
                                                 {temNota ? (
                                                     <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 px-2.5 py-1 rounded-lg shrink-0">
                                                         <Star size={12} className="fill-green-500 text-green-500" />
@@ -244,14 +241,14 @@ function GrupoModal({ grupo, onClose, onDelete }) {
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-400 font-medium">Projeto Vinculado</p>
-                                    <p className="text-sm text-[#006b64] font-semibold">{grupo.projeto}</p>
+                                    <p className="text-sm text-[#006b64] font-semibold">{grupo.projeto?.nome || grupo.projeto}</p>
                                 </div>
                             </div>
 
                             {/* Link GitHub */}
-                            {grupo.githubUrl && (
+                            {(grupo.githubUrl || grupo.github_url) && (
                                 <a
-                                    href={grupo.githubUrl}
+                                    href={grupo.githubUrl || grupo.github_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors group"
@@ -262,7 +259,7 @@ function GrupoModal({ grupo, onClose, onDelete }) {
                                     <div className="min-w-0 flex-1">
                                         <p className="text-xs text-gray-400 font-medium">Repositório GitHub</p>
                                         <p className="text-sm text-gray-700 group-hover:text-[#006b64] transition-colors truncate">
-                                            {grupo.githubUrl}
+                                            {grupo.githubUrl || grupo.github_url}
                                         </p>
                                     </div>
                                     <Link2 size={14} className="text-gray-400 group-hover:text-[#006b64] transition-colors shrink-0" />

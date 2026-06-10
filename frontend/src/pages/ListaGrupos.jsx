@@ -1,15 +1,19 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Users, Plus, Search, Calendar, Layers, Hash, FolderX, LogOut, User, LayoutGrid, Clock, CheckCircle } from "lucide-react"
+import { ArrowLeft, Users, Plus, Search, Calendar, Layers, Hash, FolderX, LogOut, User, LayoutGrid, Clock, CheckCircle, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "../components/ui/button"
 import GrupoModal from "../components/grupos/GrupoModal"
 import { useAuth } from "../context/AuthContext"
+import { listarGrupos, deletarGrupo, atualizarGrupo } from "../services/grupoService"
 
 function ListaGrupos() {
     const navigate = useNavigate()
     const { logout } = useAuth()
     const [grupos, setGrupos] = useState([])
     const [grupoSelecionado, setGrupoSelecionado] = useState(null)
+
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
 
     // Filtros
     const [filtroAno, setFiltroAno] = useState("")
@@ -18,52 +22,45 @@ function ListaGrupos() {
     const [busca, setBusca] = useState("")
     const [filtroSemProjeto, setFiltroSemProjeto] = useState(false)
 
-    useEffect(() => {
-        const stored = localStorage.getItem("grupos_mock")
-        if (stored && JSON.parse(stored).length > 0) {
-            setGrupos(JSON.parse(stored))
-        } else {
-            const mockGrupos = [
-                { id: 1, codigo: "FE-001", nome: "React Ninjas", data: "2024-03-10", ano: "2024", periodo: "1º Semestre", mvp: "Frontend", alunos: [], projeto: "Plataforma de Ensino Online", githubUrl: "https://github.com/react-ninjas/plataforma-ensino", status: "Em andamento" },
-                { id: 2, codigo: "FE-002", nome: "Vue Vanguards", data: "2024-03-15", ano: "2024", periodo: "1º Semestre", mvp: "Frontend", alunos: [] },
-                { id: 3, codigo: "FE-003", nome: "Angular Architects", data: "2024-08-20", ano: "2024", periodo: "2º Semestre", mvp: "Frontend", alunos: [], projeto: "E-commerce MVP", githubUrl: "https://github.com/angular-architects/ecommerce", status: "Concluído" },
-                { id: 4, codigo: "FE-004", nome: "Svelte Squad", data: "2025-02-10", ano: "2025", periodo: "1º Trimestre", mvp: "Frontend", alunos: [] },
-                { id: 5, codigo: "BE-001", nome: "Node Knights", data: "2024-04-05", ano: "2024", periodo: "1º Semestre", mvp: "Backend", alunos: [], projeto: "Sistema de Gestão Acadêmica", githubUrl: "https://github.com/node-knights/gestao-academica", status: "Em andamento" },
-                { id: 6, codigo: "BE-002", nome: "Python Pioneers", data: "2024-05-12", ano: "2024", periodo: "1º Semestre", mvp: "Backend", alunos: [] },
-                { id: 7, codigo: "BE-003", nome: "Java Juggernauts", data: "2024-09-01", ano: "2024", periodo: "2º Semestre", mvp: "Backend", alunos: [] },
-                { id: 8, codigo: "BE-004", nome: "Go Gurus", data: "2025-03-15", ano: "2025", periodo: "1º Trimestre", mvp: "Backend", alunos: [], projeto: "App de Delivery", githubUrl: "https://github.com/go-gurus/delivery-app", status: "Em andamento" },
-                { id: 9, codigo: "MB-001", nome: "Flutter Foxes", data: "2024-02-20", ano: "2024", periodo: "1º Semestre", mvp: "Mobile", alunos: [] },
-                { id: 10, codigo: "MB-002", nome: "React Native Rangers", data: "2024-06-10", ano: "2024", periodo: "1º Semestre", mvp: "Mobile", alunos: [], projeto: "App de Controle Financeiro", githubUrl: "https://github.com/rn-rangers/controle-financeiro", status: "Concluído" },
-                { id: 11, codigo: "MB-003", nome: "Swift Spartans", data: "2024-10-05", ano: "2024", periodo: "2º Semestre", mvp: "Mobile", alunos: [] },
-                { id: 12, codigo: "MB-004", nome: "Kotlin Kings", data: "2025-01-20", ano: "2025", periodo: "1º Trimestre", mvp: "Mobile", alunos: [] }
-            ]
-            localStorage.setItem("grupos_mock", JSON.stringify(mockGrupos))
-            setGrupos(mockGrupos)
+    const carregarGrupos = async () => {
+        setLoading(true)
+        setError(null)
+        try {
+            const data = await listarGrupos()
+            setGrupos(data)
+        } catch (err) {
+            console.error("Erro ao carregar grupos:", err)
+            setError("Não foi possível carregar os grupos. Verifique sua conexão e tente novamente.")
+        } finally {
+            setLoading(false)
         }
-    }, [])
-
-    const handleStatusChange = (grupoId, novoStatus) => {
-        const storedGrupos = localStorage.getItem("grupos_mock")
-        let gruposMock = storedGrupos ? JSON.parse(storedGrupos) : []
-        
-        const novosGrupos = gruposMock.map(g => {
-            if (g.id === grupoId) {
-                return { ...g, status: novoStatus }
-            }
-            return g
-        })
-        
-        localStorage.setItem("grupos_mock", JSON.stringify(novosGrupos))
-        setGrupos(novosGrupos)
     }
 
-    const handleDeleteGrupo = (grupoId) => {
-        const storedGrupos = localStorage.getItem("grupos_mock")
-        let gruposMock = storedGrupos ? JSON.parse(storedGrupos) : []
-        gruposMock = gruposMock.filter((g) => g.id !== grupoId)
-        localStorage.setItem("grupos_mock", JSON.stringify(gruposMock))
-        setGrupos(gruposMock)
-        setGrupoSelecionado(null)
+    useEffect(() => {
+        carregarGrupos()
+    }, [])
+
+    const handleStatusChange = async (grupoId, novoStatus) => {
+        const grupoOriginal = grupos.find(g => g.id === grupoId)
+        setGrupos(prev => prev.map(g => g.id === grupoId ? { ...g, status: novoStatus } : g))
+
+        try {
+            await atualizarGrupo(grupoId, { ...grupoOriginal, status: novoStatus })
+        } catch (err) {
+            console.error("Erro ao atualizar status:", err)
+            setGrupos(prev => prev.map(g => g.id === grupoId ? grupoOriginal : g))
+        }
+    }
+
+    const handleDeleteGrupo = async (grupoId) => {
+        try {
+            await deletarGrupo(grupoId)
+            setGrupos(prev => prev.filter(g => g.id !== grupoId))
+            setGrupoSelecionado(null)
+        } catch (err) {
+            console.error("Erro ao deletar grupo:", err)
+            alert("Erro ao excluir o grupo. Tente novamente.")
+        }
     }
 
     const gruposFiltrados = grupos.filter((g) => {
@@ -110,18 +107,18 @@ function ListaGrupos() {
 
             <div className="pl-2 flex flex-wrap gap-2 text-xs mt-2">
                 <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded flex items-center gap-1">
-                    <Calendar size={12} /> {grupo.ano} - {grupo.periodo}
+                    <Calendar size={12} /> {grupo.ano || (grupo.data ? new Date(grupo.data).getFullYear() : '')} - {grupo.periodo}
                 </span>
                 <span className="bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded flex items-center gap-1">
                     <Layers size={12} /> {grupo.data}
                 </span>
                 <span className="bg-gray-100 px-2 py-1 rounded text-gray-600 font-semibold flex items-center gap-1">
                     <Users size={12} />
-                    {grupo.alunos?.length || 0} alunos
+                    {grupo.totalAlunos ?? grupo.total_alunos ?? 0} alunos
                 </span>
             </div>
 
-            {/* Status do Projeto - Visível apenas se tiver projeto vinculado */}
+            {/* Status do Projeto */}
             {grupo.projeto && (
                 <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between pl-2">
                     <div className="flex items-center gap-2 text-[11px] text-gray-500 font-bold uppercase tracking-wider">
@@ -140,11 +137,10 @@ function ListaGrupos() {
                         value={grupo.status || "Em andamento"}
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => handleStatusChange(grupo.id, e.target.value)}
-                        className={`text-xs font-bold py-1.5 px-3 rounded-lg border outline-none transition-all cursor-pointer shadow-sm ${
-                            grupo.status === "Concluído"
-                                ? "bg-green-50 border-green-200 text-green-700 focus:ring-2 focus:ring-green-500/20"
-                                : "bg-blue-50 border-blue-200 text-blue-700 focus:ring-2 focus:ring-blue-500/20"
-                        }`}
+                        className={`text-xs font-bold py-1.5 px-3 rounded-lg border outline-none transition-all cursor-pointer shadow-sm ${grupo.status === "Concluído"
+                            ? "bg-green-50 border-green-200 text-green-700 focus:ring-2 focus:ring-green-500/20"
+                            : "bg-blue-50 border-blue-200 text-blue-700 focus:ring-2 focus:ring-blue-500/20"
+                            }`}
                     >
                         <option value="Em andamento">Em andamento</option>
                         <option value="Concluído">Concluído</option>
@@ -271,7 +267,23 @@ function ListaGrupos() {
                 </div>
 
                 {/* Listagem */}
-                {gruposFiltrados.length === 0 ? (
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-gray-100 shadow-sm">
+                        <Loader2 size={36} className="animate-spin text-[#006b64] mb-3" />
+                        <p className="text-gray-500 text-sm">Carregando grupos...</p>
+                    </div>
+                ) : error ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
+                        <AlertCircle size={48} className="mb-3 text-red-400" />
+                        <p className="text-base font-medium text-red-600">{error}</p>
+                        <button
+                            onClick={carregarGrupos}
+                            className="mt-4 text-[#006b64] text-sm underline hover:opacity-80 cursor-pointer"
+                        >
+                            Tentar novamente
+                        </button>
+                    </div>
+                ) : gruposFiltrados.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-gray-400 bg-white rounded-xl border border-gray-100 shadow-sm">
                         <Layers size={48} className="mb-3 opacity-40 text-[#006b64]" />
                         <p className="text-base font-medium">Nenhum grupo encontrado com os filtros atuais.</p>
