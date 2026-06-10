@@ -1,6 +1,23 @@
 from rest_framework import serializers
 
-from apps.alunos.models import Aluno
+from apps.alunos.models import Aluno, AlunoGrupo
+from apps.grupos.models import Grupo
+
+
+class AlunoGrupoSerializer(serializers.ModelSerializer):
+    grupo_nome   = serializers.CharField(source="grupo.nome", read_only=True)
+    projeto_nome = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = AlunoGrupo
+        fields = ("id", "grupo", "grupo_nome", "projeto_nome", "nota")
+        read_only_fields = ("id", "grupo_nome", "projeto_nome")
+
+    def get_projeto_nome(self, obj):
+        projeto = obj.grupo.projetos.filter(status="Ativo").first()
+        if projeto:
+            return projeto.nome
+        return None
 
 
 class AlunoSerializer(serializers.ModelSerializer):
@@ -9,27 +26,25 @@ class AlunoSerializer(serializers.ModelSerializer):
     Exibe o nome do grupo ao invés do ID.
     """
 
-    grupo_nome = serializers.CharField(
-        source="grupo.nome",
+    grupos = AlunoGrupoSerializer(
+        source="aluno_grupos",
+        many=True,
         read_only=True,
-        allow_null=True,
-        help_text="Nome do grupo do aluno",
     )
 
     class Meta:
-        model = Aluno
+        model  = Aluno
         fields = (
             "id",
             "nome",
             "email",
             "celular",
             "matricula",
-            "grupo",
-            "grupo_nome",
+            "grupos",
             "criado_em",
             "atualizado_em",
         )
-        read_only_fields = ("id", "criado_em", "atualizado_em", "grupo_nome")
+        read_only_fields = ("id", "criado_em", "atualizado_em", "grupos")
 
 
 class CriarAlunoSerializer(serializers.ModelSerializer):
@@ -45,7 +60,6 @@ class CriarAlunoSerializer(serializers.ModelSerializer):
             "email",
             "celular",
             "matricula",
-            "grupo",
         )
 
     def validate_email(self, value):
@@ -72,7 +86,6 @@ class AtualizarAlunoSerializer(serializers.ModelSerializer):
             "email",
             "celular",
             "matricula",
-            "grupo",
         )
 
     def validate_email(self, value):
@@ -91,23 +104,32 @@ class AtualizarAlunoSerializer(serializers.ModelSerializer):
         return value
     
 
-class VincularGrupoSerializer(serializers.ModelSerializer):
-    """
-    Serializer para vincular ou desvincular aluno de um grupo.
-    Só aceita o campo grupo.
-    """
+class VincularGrupoSerializer(serializers.Serializer):
+    grupo = serializers.PrimaryKeyRelatedField(
+        queryset=Grupo.objects.all(),
+        help_text="ID do grupo para vincular",
+    )
 
-    class Meta:
-        model = Aluno
-        fields = ("grupo",)
 
-    def validate_grupo(self, value):
-        if value is None:
-            return value  # desvincula — aceita null
+class DesvincularGrupoSerializer(serializers.Serializer):
+    grupo = serializers.PrimaryKeyRelatedField(
+        queryset=Grupo.objects.all(),
+        help_text="ID do grupo para desvincular",
+    )
 
-        # Verifica se o aluno já pertence a esse grupo
-        if self.instance and self.instance.grupo == value:
-            raise serializers.ValidationError(
-                "Aluno já pertence a esse grupo."
-            )
+    
+class LancarNotaSerializer(serializers.Serializer):
+    grupo = serializers.PrimaryKeyRelatedField(
+        queryset=Grupo.objects.all(),
+        help_text="ID do grupo",
+    )
+    nota = serializers.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        help_text="Nota do aluno nesse grupo (0 a 10)",
+    )
+
+    def validate_nota(self, value):
+        if value < 0 or value > 10:
+            raise serializers.ValidationError("A nota deve ser entre 0 e 10.")
         return value
