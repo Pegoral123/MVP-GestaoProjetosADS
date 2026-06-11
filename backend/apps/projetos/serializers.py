@@ -61,3 +61,31 @@ class CriarProjetoSerializer(serializers.ModelSerializer):
                 "Esse grupo já possui um projeto ativo."
             )
         return value
+
+
+class AtualizarProjetoSerializer(serializers.ModelSerializer):
+    """
+    Serializer para atualização de projeto.
+    """
+
+    class Meta:
+        model  = Projeto
+        fields = (
+            "nome",
+            "descricao",
+            "mvp",
+            "ano",
+            "requisitos",
+            "status",
+            "grupo",
+        )
+
+    def validate_grupo(self, value):
+        # Ignora o próprio projeto na verificação
+        if Projeto.objects.filter(
+            grupo=value, status="Ativo"
+        ).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError(
+                "Esse grupo já possui um projeto ativo."
+            )
+        return value
