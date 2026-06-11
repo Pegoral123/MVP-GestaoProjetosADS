@@ -24,3 +24,19 @@ class ProjetoService:
             raise serializers.ValidationError(
                 {"id": "Projeto não encontrado."}
             ) from exc
+        
+
+    @staticmethod
+    def buscar_por_grupo(grupo_id: int):
+        """
+        Retorna todos os projetos de um grupo específico.
+        """
+        return Projeto.objects.filter(grupo_id=grupo_id)
+
+    @staticmethod
+    def criar_projeto(data: dict) -> Projeto:
+        """
+        Cria um novo projeto.
+        Validação de grupo já feita no serializer.
+        """
+        return Projeto.objects.create(**data)
