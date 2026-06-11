@@ -37,7 +37,6 @@ class ProjetoService:
     def criar_projeto(data: dict) -> Projeto:
         """
         Cria um novo projeto.
-        Validação de grupo já feita no serializer.
         """
         return Projeto.objects.create(**data)
     
