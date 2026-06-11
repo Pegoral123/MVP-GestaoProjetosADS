@@ -70,3 +70,17 @@ class ProjetoService:
             )
 
         projeto.delete()
+
+    @staticmethod
+    def alterar_status(projeto: Projeto, status: str) -> Projeto:
+        """
+        Altera o status do projeto — Ativo ou Inativo.
+        """
+        if status not in ["Ativo", "Inativo"]:
+            raise serializers.ValidationError(
+                {"status": "Status inválido. Use 'Ativo' ou 'Inativo'."}
+            )
+
+        projeto.status = status
+        projeto.save()
+        return projeto
