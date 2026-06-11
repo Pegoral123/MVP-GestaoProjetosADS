@@ -27,13 +27,6 @@ class ProjetoService:
         
 
     @staticmethod
-    def buscar_por_grupo(grupo_id: int):
-        """
-        Retorna todos os projetos de um grupo específico.
-        """
-        return Projeto.objects.filter(grupo_id=grupo_id)
-
-    @staticmethod
     def criar_projeto(data: dict) -> Projeto:
         """
         Cria um novo projeto.
@@ -54,7 +47,6 @@ class ProjetoService:
     def deletar_projeto(projeto_id: int) -> None:
         """
         Deleta um projeto.
-        Regra: não pode deletar se tiver entregas vinculadas.
         """
         try:
             projeto = Projeto.objects.get(id=projeto_id)
@@ -62,12 +54,6 @@ class ProjetoService:
             raise serializers.ValidationError(
                 {"id": "Projeto não encontrado."}
             ) from exc
-
-        if projeto.entregas.exists():
-            raise serializers.ValidationError(
-                {"entregas": "Não é possível deletar um projeto que possui entregas vinculadas."}
-            )
-
         projeto.delete()
 
     @staticmethod
