@@ -40,3 +40,33 @@ class ProjetoService:
         Validação de grupo já feita no serializer.
         """
         return Projeto.objects.create(**data)
+    
+    @staticmethod
+    def atualizar_projeto(projeto: Projeto, data: dict) -> Projeto:
+        """
+        Atualiza os dados de um projeto.
+        """
+        for campo, valor in data.items():
+            setattr(projeto, campo, valor)
+        projeto.save()
+        return projeto
+
+    @staticmethod
+    def deletar_projeto(projeto_id: int) -> None:
+        """
+        Deleta um projeto.
+        Regra: não pode deletar se tiver entregas vinculadas.
+        """
+        try:
+            projeto = Projeto.objects.get(id=projeto_id)
+        except Projeto.DoesNotExist as exc:
+            raise serializers.ValidationError(
+                {"id": "Projeto não encontrado."}
+            ) from exc
+
+        if projeto.entregas.exists():
+            raise serializers.ValidationError(
+                {"entregas": "Não é possível deletar um projeto que possui entregas vinculadas."}
+            )
+
+        projeto.delete()
