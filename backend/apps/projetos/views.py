@@ -60,3 +60,158 @@ class ProjetoListCreateView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+@extend_schema(tags=["Projetos"])
+class ProjetoDetailView(APIView):
+    """
+    Busca, atualiza ou deleta um projeto pelo ID.
+    GET    /api/v1/projetos/{id}/
+    PUT    /api/v1/projetos/{id}/
+    PATCH  /api/v1/projetos/{id}/
+    DELETE /api/v1/projetos/{id}/
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, projeto_id: int) -> Projeto:
+        return ProjetoService.buscar_por_id(projeto_id)
+
+    @extend_schema(responses=ProjetoSerializer)
+    def get(self, request, pk):
+        projeto = self.get_object(pk)
+        serializer = ProjetoSerializer(projeto)
+        return Response(
+            {
+                "data": serializer.data,
+                "message": "Projeto encontrado.",
+                "statusCode": status.HTTP_200_OK,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(request=AtualizarProjetoSerializer, responses=ProjetoSerializer)
+    def put(self, request, pk):
+        projeto = self.get_object(pk)
+        serializer = AtualizarProjetoSerializer(projeto, data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "message": "Dados inválidos.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        projeto = ProjetoService.atualizar_projeto(
+            projeto, serializer.validated_data
+        )
+
+        return Response(
+            {
+                "data": ProjetoSerializer(projeto).data,
+                "message": "Projeto atualizado com sucesso.",
+                "statusCode": status.HTTP_200_OK,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(request=AtualizarProjetoSerializer, responses=ProjetoSerializer)
+    def patch(self, request, pk):
+        projeto = self.get_object(pk)
+        serializer = AtualizarProjetoSerializer(
+            projeto, data=request.data, partial=True
+        )
+
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "message": "Dados inválidos.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        projeto = ProjetoService.atualizar_projeto(
+            projeto, serializer.validated_data
+        )
+
+        return Response(
+            {
+                "data": ProjetoSerializer(projeto).data,
+                "message": "Projeto atualizado com sucesso.",
+                "statusCode": status.HTTP_200_OK,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(responses={200: None})
+    def delete(self, request, pk):
+        try:
+            ProjetoService.deletar_projeto(pk)
+        except serializers.ValidationError as e:
+            return Response(
+                {
+                    "message": "Não foi possível deletar o projeto.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": e.detail,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "message": "Projeto deletado com sucesso.",
+                "statusCode": status.HTTP_200_OK,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(tags=["Projetos"])
+class ProjetoAlterarStatusView(APIView):
+    """
+    Altera o status do projeto — Ativo ou Inativo.
+    PATCH /api/v1/projetos/{id}/status/
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=ProjetoSerializer)
+    def patch(self, request, pk):
+        projeto = ProjetoService.buscar_por_id(pk)
+        novo_status = request.data.get("status")
+
+        if not novo_status:
+            return Response(
+                {
+                    "message": "Campo status é obrigatório.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": {"status": "Campo obrigatório."},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            projeto = ProjetoService.alterar_status(projeto, novo_status)
+        except serializers.ValidationError as e:
+            return Response(
+                {
+                    "message": "Status inválido.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": e.detail,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "data": ProjetoSerializer(projeto).data,
+                "message": f"Status alterado para {novo_status} com sucesso.",
+                "statusCode": status.HTTP_200_OK,
+            },
+            status=status.HTTP_200_OK,
+        )
