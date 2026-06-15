@@ -114,3 +114,17 @@ class AtualizarGrupoSerializer(serializers.ModelSerializer):
         ).exists():
             raise serializers.ValidationError("Nome já está em uso.")
         return value
+
+
+class VincularProjetoSerializer(serializers.Serializer):
+    projeto_id = serializers.IntegerField(required=False, allow_null=True)
+
+    def validate_projeto_id(self, value):
+        if value is None:
+            return value
+
+        from apps.projetos.models import Projeto
+
+        if not Projeto.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Projeto não encontrado.")
+        return value

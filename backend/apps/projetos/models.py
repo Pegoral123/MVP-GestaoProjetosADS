@@ -55,14 +55,6 @@ class Projeto(models.Model):
         help_text="Status do projeto: Ativo ou Inativo",
     )
 
-    grupo = models.ForeignKey(
-        "grupos.Grupo",
-        on_delete=models.PROTECT,
-        related_name="projetos",
-        verbose_name="Grupo",
-        help_text="Grupo responsável pelo projeto",
-    )
-
     criado_em = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Criado em",

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.grupos.models import Grupo
+from apps.projetos.models import Projeto
 
 
 class GrupoService:
@@ -83,3 +84,23 @@ class GrupoService:
             ) from exc
 
         return grupo.alunos.all()
+
+    @staticmethod
+    def vincular_projeto(grupo, projeto_id) -> Grupo:
+        """
+        Vincula ou desvincula um projeto ao grupo.
+        Passa None para desvincular.
+        """
+        if projeto_id is not None:
+            try:
+                projeto = Projeto.objects.get(id=projeto_id)
+            except Projeto.DoesNotExist as exc:
+                raise serializers.ValidationError(
+                    {"projeto": "Projeto não encontrado."}
+                ) from exc
+            grupo.projeto = projeto
+        else:
+            grupo.projeto = None
+
+        grupo.save()
+        return grupo
