@@ -136,7 +136,6 @@ class CriarProjetoSerializer(serializers.ModelSerializer):
             "ano",
             "requisitos",
             "status",
-            "grupo",
         )
     
     def validate_nome(self, value):
