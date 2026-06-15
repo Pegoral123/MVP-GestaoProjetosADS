@@ -79,7 +79,18 @@ class ProjetoDetailView(APIView):
 
     @extend_schema(responses=ProjetoSerializer)
     def get(self, request, pk):
-        projeto = self.get_object(pk)
+        try:
+            projeto = self.get_object(pk)
+        except serializers.ValidationError as e:
+            return Response(
+                {
+                    "message": "Projeto não encontrado.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": e.detail,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = ProjetoSerializer(projeto)
         return Response(
             {
