@@ -50,6 +50,16 @@ class Grupo(models.Model):
         help_text="Tipo de MVP: Frontend, Backend ou Mobile",
     )
 
+    projeto = models.ForeignKey(
+        "projetos.Projeto",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="grupos",
+        verbose_name="Projeto",
+        help_text="Projeto que o grupo está desenvolvendo",
+    )
+
     github_url = models.URLField(
         max_length=500,
         blank=True,
