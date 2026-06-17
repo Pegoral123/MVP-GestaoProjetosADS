@@ -54,11 +54,14 @@ class GrupoSerializer(serializers.ModelSerializer):
             "total_alunos",
         )
 
-    @extend_schema_field(ProjetoResumoSerializer)
+    @extend_schema_field(serializers.DictField)
     def get_projeto(self, obj):
-        projeto = obj.projetos.filter(status="Ativo").first()
-        if projeto:
-            return ProjetoResumoSerializer(projeto).data
+        if obj.projeto:
+            return {
+                "id":     obj.projeto.id,
+                "nome":   obj.projeto.nome,
+                "status": obj.projeto.status,
+            }
         return None
 
     @extend_schema_field(AlunoResumoSerializer(many=True))
