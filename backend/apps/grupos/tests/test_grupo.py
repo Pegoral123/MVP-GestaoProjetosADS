@@ -6,6 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.alunos.models import Aluno, AlunoGrupo
 from apps.authentication.models import CustomUser
 from apps.grupos.models import Grupo
+from apps.projetos.models import Projeto
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -64,6 +65,30 @@ def grupo_com_alunos(db):
     AlunoGrupo.objects.create(aluno=a1, grupo=g, nota=8.5)
     AlunoGrupo.objects.create(aluno=a2, grupo=g, nota=None)
     return g
+
+
+@pytest.fixture
+def projeto(db):
+    return Projeto.objects.create(
+        nome="E-commerce Platform",
+        descricao="Plataforma de e-commerce com checkout",
+        mvp="Full Stack",
+        ano="2024",
+        requisitos="PostgreSQL, React, Django",
+        status="Ativo",
+    )
+
+
+@pytest.fixture
+def projeto_outro(db):
+    return Projeto.objects.create(
+        nome="Chat em Tempo Real",
+        descricao="Sistema de chat com WebSocket",
+        mvp="Backend",
+        ano="2024",
+        requisitos="Node.js, Socket.io, PostgreSQL",
+        status="Ativo",
+    )
 
 
 # ── Testes do Card do Grupo ───────────────────────────────────────────────────
@@ -136,3 +161,97 @@ def test_card_grupo_retorna_nome_aluno(client_autenticado, grupo_com_alunos):
     nomes = [a["nome"] for a in data["alunos"]]
     assert "João Silva"  in nomes
     assert "Maria Costa" in nomes
+
+
+# ── Testes de Vincular Projeto ────────────────────────────────────────────────
+
+@pytest.mark.django_db
+def test_vincular_projeto_com_sucesso(client_autenticado, grupo, projeto):
+    """Testa se é possível vincular um projeto ao grupo"""
+    response = client_autenticado.patch(
+        f"/api/v1/grupos/{grupo.id}/vincular-projeto/",
+        {"projeto_id": projeto.id},
+        format="json",
+    )
+    assert response.status_code == 200
+    assert response.data["message"] == "Projeto vinculado com sucesso."
+    assert response.data["data"]["projeto"]["id"] == projeto.id
+    assert response.data["data"]["projeto"]["nome"] == "E-commerce Platform"
+
+
+@pytest.mark.django_db
+def test_desvincar_projeto_com_sucesso(client_autenticado, grupo, projeto):
+    """Testa se é possível desvincar um projeto do grupo"""
+    # Primeiro vincula o projeto
+    client_autenticado.patch(
+        f"/api/v1/grupos/{grupo.id}/vincular-projeto/",
+        {"projeto_id": projeto.id},
+        format="json",
+    )
+
+    # Depois desvincula
+    response = client_autenticado.patch(
+        f"/api/v1/grupos/{grupo.id}/vincular-projeto/",
+        {"projeto_id": None},
+        format="json",
+    )
+    assert response.status_code == 200
+    assert response.data["message"] == "Projeto desvinculado com sucesso."
+    assert response.data["data"]["projeto"] is None
+
+
+@pytest.mark.django_db
+def test_vincular_projeto_invalido(client_autenticado, grupo):
+    """Testa se retorna erro ao tentar vincular um projeto inválido"""
+    response = client_autenticado.patch(
+        f"/api/v1/grupos/{grupo.id}/vincular-projeto/",
+        {"projeto_id": 99999},
+        format="json",
+    )
+    assert response.status_code == 400
+    assert response.data["message"] == "Dados inválidos."
+    assert "errors" in response.data
+
+
+@pytest.mark.django_db
+def test_vincular_projeto_grupo_nao_existe(client_autenticado):
+    """Testa se retorna erro ao vincular projeto em grupo inexistente"""
+    response = client_autenticado.patch(
+        "/api/v1/grupos/99999/vincular-projeto/",
+        {"projeto_id": 1},
+        format="json",
+    )
+    assert response.status_code == 400
+    assert response.data["message"] == "Grupo não encontrado."
+
+
+@pytest.mark.django_db
+def test_vincular_projeto_troca_de_projeto(client_autenticado, grupo, projeto, projeto_outro):
+    """Testa se é possível trocar de projeto vinculado ao grupo"""
+    # Vincula o primeiro projeto
+    client_autenticado.patch(
+        f"/api/v1/grupos/{grupo.id}/vincular-projeto/",
+        {"projeto_id": projeto.id},
+        format="json",
+    )
+
+    # Troca para o segundo projeto
+    response = client_autenticado.patch(
+        f"/api/v1/grupos/{grupo.id}/vincular-projeto/",
+        {"projeto_id": projeto_outro.id},
+        format="json",
+    )
+    assert response.status_code == 200
+    assert response.data["data"]["projeto"]["id"] == projeto_outro.id
+    assert response.data["data"]["projeto"]["nome"] == "Chat em Tempo Real"
+
+
+@pytest.mark.django_db
+def test_vincular_projeto_requer_autenticacao(client, grupo, projeto):
+    """Testa se o endpoint requer autenticação"""
+    response = client.patch(
+        f"/api/v1/grupos/{grupo.id}/vincular-projeto/",
+        {"projeto_id": projeto.id},
+        format="json",
+    )
+    assert response.status_code == 401
