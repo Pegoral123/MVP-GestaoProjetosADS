@@ -17,9 +17,9 @@ class AlunoGrupoSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_projeto_nome(self, obj) -> Optional[str]:
-        projeto = obj.grupo.projetos.filter(status="Ativo").first()
-        if projeto:
-            return projeto.nome
+
+        if obj.grupo.projeto:
+            return obj.grupo.projeto.nome
         return None
 
 
