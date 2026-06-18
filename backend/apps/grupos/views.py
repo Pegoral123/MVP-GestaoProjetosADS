@@ -10,6 +10,7 @@ from apps.grupos.serializers import (
     AtualizarGrupoSerializer,
     CriarGrupoSerializer,
     GrupoSerializer,
+    VincularProjetoSerializer,
 )
 from apps.grupos.services import GrupoService
 
@@ -196,6 +197,74 @@ class GrupoAlunosView(APIView):
             {
                 "data": serializer.data,
                 "message": "Alunos do grupo listados com sucesso.",
+                "statusCode": status.HTTP_200_OK,
+            },
+            status=status.HTTP_200_OK,
+        )
+    
+
+@extend_schema(tags=["Grupos"])
+class VincularProjetoView(APIView):
+    """
+    Vincula ou desvincula um projeto ao grupo.
+    PATCH /api/v1/grupos/{id}/vincular-projeto/
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, grupo_id: int) -> Grupo:
+        return GrupoService.buscar_por_id(grupo_id)
+
+    @extend_schema(request=VincularProjetoSerializer, responses=GrupoSerializer)
+    def patch(self, request, pk):
+        try:
+            grupo = self.get_object(pk)
+        except serializers.ValidationError as e:
+            return Response(
+                {
+                    "message": "Grupo não encontrado.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": e.detail,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = VincularProjetoSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "message": "Dados inválidos.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        projeto_id = serializer.validated_data.get("projeto_id")
+
+        try:
+            grupo = GrupoService.vincular_projeto(grupo, projeto_id)
+        except serializers.ValidationError as e:
+            return Response(
+                {
+                    "message": "Não foi possível vincular o projeto.",
+                    "statusCode": status.HTTP_400_BAD_REQUEST,
+                    "errors": e.detail,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        mensagem = (
+            "Projeto vinculado com sucesso."
+            if projeto_id
+            else "Projeto desvinculado com sucesso."
+        )
+
+        return Response(
+            {
+                "data": GrupoSerializer(grupo).data,
+                "message": mensagem,
                 "statusCode": status.HTTP_200_OK,
             },
             status=status.HTTP_200_OK,

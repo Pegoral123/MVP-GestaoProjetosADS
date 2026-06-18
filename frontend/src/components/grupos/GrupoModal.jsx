@@ -1,48 +1,22 @@
 import { useState, useEffect } from "react"
-import { X, Hash, Edit, Trash2, AlertTriangle, Users, Calendar, Layers, FolderGit2, Link2, FolderOpen, ChevronDown, CheckCircle, Star, MinusCircle, Loader2 } from "lucide-react"
+import { X, Hash, Edit, Trash2, AlertTriangle, Users, Calendar, Layers, FolderGit2, Link2, FolderOpen, ChevronDown, CheckCircle, Star, MinusCircle } from "lucide-react"
 import { Button } from "../ui/button"
 import { useNavigate } from "react-router-dom"
-import { listarAlunosDoGrupo } from "../../services/grupoService"
+
 
 function GrupoModal({ grupo, onClose, onDelete }) {
     const navigate = useNavigate()
     const [isConfirming, setIsConfirming] = useState(false)
     const [membrosExpandido, setMembrosExpandido] = useState(false)
-    const [alunosData, setAlunosData] = useState([])
-    const [notasGrupo, setNotasGrupo] = useState({})
-
-    const [loadingMembros, setLoadingMembros] = useState(false)
 
     useEffect(() => {
         if (!grupo) {
             setIsConfirming(false)
             setMembrosExpandido(false)
-            setNotasGrupo({})
-            setAlunosData([])
-        } else {
-            // Notas ainda não têm API aqui
-            setNotasGrupo({})
         }
     }, [grupo])
 
-    useEffect(() => {
-        if (!grupo || !membrosExpandido) return
-        if (alunosData.length > 0) return
-
-        const fetchMembros = async () => {
-            setLoadingMembros(true)
-            try {
-                const membros = await listarAlunosDoGrupo(grupo.id)
-                setAlunosData(membros)
-            } catch (error) {
-                console.error("Erro ao carregar membros do grupo", error)
-                setAlunosData([])
-            } finally {
-                setLoadingMembros(false)
-            }
-        }
-        fetchMembros()
-    }, [grupo, membrosExpandido])
+    const alunosData = grupo?.alunos || []
 
     if (!grupo) return null
 
@@ -181,7 +155,7 @@ function GrupoModal({ grupo, onClose, onDelete }) {
                             </div>
                             <div className="flex-1">
                                 <p className="text-xs text-gray-400 font-medium">Alunos</p>
-                                <p className="text-sm text-gray-700 font-semibold">{grupo.totalAlunos ?? grupo.total_alunos ?? 0} membros</p>
+                                <p className="text-sm text-gray-700 font-semibold">{alunosData.length} membros</p>
                             </div>
                             <ChevronDown size={14} className={`text-gray-400 transition-transform ${membrosExpandido ? "rotate-180" : ""}`} />
                         </button>
@@ -189,18 +163,12 @@ function GrupoModal({ grupo, onClose, onDelete }) {
 
                     {membrosExpandido && (
                         <div className="border border-gray-100 rounded-xl overflow-hidden">
-                            {loadingMembros ? (
-                                <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
-                                    <Loader2 size={18} className="animate-spin" />
-                                    <span className="text-sm">Carregando membros...</span>
-                                </div>
-                            ) : alunosData.length === 0 ? (
+                            {alunosData.length === 0 ? (
                                 <p className="text-sm text-gray-400 text-center py-4 italic">Nenhum aluno vinculado a este grupo.</p>
                             ) : (
                                 <div className="divide-y divide-gray-100 max-h-52 overflow-y-auto">
                                     {alunosData.map((aluno) => {
-                                        const nota = notasGrupo[aluno.id]
-                                        const temNota = nota !== undefined && nota !== "" && nota !== null
+                                        const temNota = aluno.nota !== undefined && aluno.nota !== "" && aluno.nota !== null
                                         return (
                                             <div key={aluno.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
                                                 <div className="bg-[#006b64]/10 rounded-full w-8 h-8 flex items-center justify-center shrink-0">
@@ -210,12 +178,11 @@ function GrupoModal({ grupo, onClose, onDelete }) {
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     <p className="text-sm font-medium text-gray-800 truncate">{aluno.nome}</p>
-                                                    <p className="text-xs text-gray-400">{aluno.matricula}</p>
                                                 </div>
                                                 {temNota ? (
                                                     <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 px-2.5 py-1 rounded-lg shrink-0">
                                                         <Star size={12} className="fill-green-500 text-green-500" />
-                                                        <span className="text-xs font-bold">{Number(nota).toFixed(1)}</span>
+                                                        <span className="text-xs font-bold">{parseFloat(aluno.nota).toFixed(1)}</span>
                                                     </div>
                                                 ) : (
                                                     <div className="flex items-center gap-1.5 bg-gray-100 border border-gray-200 text-gray-400 px-2.5 py-1 rounded-lg shrink-0">

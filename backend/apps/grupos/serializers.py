@@ -54,11 +54,14 @@ class GrupoSerializer(serializers.ModelSerializer):
             "total_alunos",
         )
 
-    @extend_schema_field(ProjetoResumoSerializer)
+    @extend_schema_field(serializers.DictField)
     def get_projeto(self, obj):
-        projeto = obj.projetos.filter(status="Ativo").first()
-        if projeto:
-            return ProjetoResumoSerializer(projeto).data
+        if obj.projeto:
+            return {
+                "id":     obj.projeto.id,
+                "nome":   obj.projeto.nome,
+                "status": obj.projeto.status,
+            }
         return None
 
     @extend_schema_field(AlunoResumoSerializer(many=True))
@@ -113,4 +116,18 @@ class AtualizarGrupoSerializer(serializers.ModelSerializer):
             pk=self.instance.pk
         ).exists():
             raise serializers.ValidationError("Nome já está em uso.")
+        return value
+
+
+class VincularProjetoSerializer(serializers.Serializer):
+    projeto_id = serializers.IntegerField(required=False, allow_null=True)
+
+    def validate_projeto_id(self, value):
+        if value is None:
+            return value
+
+        from apps.projetos.models import Projeto
+
+        if not Projeto.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Projeto não encontrado.")
         return value
