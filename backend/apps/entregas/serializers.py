@@ -1,4 +1,6 @@
+from typing import List, Dict, Any
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from apps.alunos.models import AlunoGrupo
 from apps.entregas.models import Entrega
@@ -57,7 +59,8 @@ class EntregaSerializer(serializers.ModelSerializer):
             "alunos",
         )
 
-    def get_alunos(self, obj):
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
+    def get_alunos(self, obj) -> List[Dict[str, Any]]:
         vinculos = AlunoGrupo.objects.filter(
             grupo=obj.grupo
         ).select_related("aluno")
