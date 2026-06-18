@@ -145,6 +145,10 @@ SPECTACULAR_SETTINGS = {
         }
     },
     "SECURITY": [{"bearerAuth": []}],
+    "ENUM_NAME_OVERRIDES": {
+        "StatusEnum": "apps.projetos.models.Projeto.Status",
+        "GrupoStatusEnum": "apps.grupos.models.Grupo.Status",
+    },
 }
 
 SIMPLE_JWT = {

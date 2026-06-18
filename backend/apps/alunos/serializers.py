@@ -1,4 +1,6 @@
+from typing import Optional
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from apps.alunos.models import Aluno, AlunoGrupo
 from apps.grupos.models import Grupo
@@ -13,10 +15,11 @@ class AlunoGrupoSerializer(serializers.ModelSerializer):
         fields = ("id", "grupo", "grupo_nome", "projeto_nome", "nota")
         read_only_fields = ("id", "grupo_nome", "projeto_nome")
 
-    def get_projeto_nome(self, obj):
-        projeto = obj.grupo.projetos.filter(status="Ativo").first()
-        if projeto:
-            return projeto.nome
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_projeto_nome(self, obj) -> Optional[str]:
+
+        if obj.grupo.projeto:
+            return obj.grupo.projeto.nome
         return None
 
 
