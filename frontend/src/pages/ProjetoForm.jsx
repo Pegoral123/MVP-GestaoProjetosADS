@@ -4,7 +4,6 @@ import { ArrowLeft, Save, X, LayoutGrid, FileText, Calendar, Loader2, AlertCircl
 import { Button } from "../components/ui/button"
 import { buscarProjeto, criarProjeto, atualizarProjeto } from "../services/projetoService"
 
-// Valores aceitos pela API
 const MVP_OPTIONS = ["Frontend", "Backend", "Mobile"]
 
 function ProjetoForm() {
@@ -26,7 +25,6 @@ function ProjetoForm() {
     const [salvando, setSalvando] = useState(false)
     const [errorMsg, setErrorMsg] = useState("")
 
-    // Modo edição: busca dados reais na API
     useEffect(() => {
         if (!isEdit) return
 
@@ -90,7 +88,6 @@ function ProjetoForm() {
                 console.error("Erro ao salvar projeto:", err)
                 const detail = err?.response?.data
                 if (detail && typeof detail === "object") {
-                    // Mapeia erros de campo vindos da API (ex: { nome: ["..."] })
                     const apiErrors = {}
                     Object.entries(detail).forEach(([campo, msgs]) => {
                         apiErrors[campo] = Array.isArray(msgs) ? msgs.join(" ") : String(msgs)
@@ -114,7 +111,6 @@ function ProjetoForm() {
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }))
     }
 
-    // Loading inicial no modo de edição
     if (loadingDados) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
