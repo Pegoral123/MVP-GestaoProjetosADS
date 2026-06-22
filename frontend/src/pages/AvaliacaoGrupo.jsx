@@ -18,6 +18,8 @@ import {
 } from "lucide-react"
 import { Button } from "../components/ui/button"
 import api from "../services/api"
+import { buscarGrupo, atualizarGrupo } from "../services/grupoService"
+import { buscarEntregaPorGrupo, criarEntrega, atualizarEntrega } from "../services/entregaService"
 
 const getAlunoId = (aluno) => typeof aluno === 'object' && aluno !== null ? aluno.id : aluno
 
@@ -34,36 +36,52 @@ function AvaliacaoGrupo() {
     const [notaErrors, setNotaErrors] = useState({})
 
     const [successMsg, setSuccessMsg] = useState("")
+    const [entregaId, setEntregaId] = useState(null)
 
     useEffect(() => {
-        // Buscar alunos
-        const fetchAlunos = async () => {
+        const fetchData = async () => {
             try {
-                const res = await api.get('/api/v1/alunos/')
+                const res = await api.get('alunos/')
                 let data = []
                 if (Array.isArray(res.data)) data = res.data
                 else if (res.data?.results) data = res.data.results
                 else if (res.data?.data) data = res.data.data
                 else if (res.data?.alunos) data = res.data.alunos
                 setAlunos(data)
-            } catch (error) {
-                console.error("Erro ao buscar alunos", error)
-            }
-        }
-        fetchAlunos()
 
-        // Carregar grupo do localStorage
-        const storedGrupos = localStorage.getItem("grupos_mock")
-        if (storedGrupos) {
-            const gruposMock = JSON.parse(storedGrupos)
-            const g = gruposMock.find(x => x.id.toString() === id)
-            if (g) {
+                const g = await buscarGrupo(id)
                 setGrupo(g)
-                setDataApresentacao(g.dataApresentacao || "")
-                setComentarioGeral(g.comentarioGeral || "")
-                setNotas(g.notas || {})
+
+                const entregasDoGrupo = await buscarEntregaPorGrupo(id)
+                if (entregasDoGrupo && entregasDoGrupo.length > 0) {
+                    const entrega = entregasDoGrupo[0]
+                    setEntregaId(entrega.id)
+                    setDataApresentacao(entrega.dataApresentacao || "")
+                    setComentarioGeral(entrega.comentarioGeral || "")
+
+                    const notasObj = {}
+
+                    if (entrega.alunos && entrega.alunos.length > 0) {
+                        entrega.alunos.forEach(a => {
+                            if (a.nota !== null && a.nota !== undefined) {
+                                notasObj[a.id] = a.nota
+                            }
+                        })
+                    }
+
+                    if (entrega.notas && entrega.notas.length > 0) {
+                        entrega.notas.forEach(n => {
+                            notasObj[n.aluno] = n.nota
+                        })
+                    }
+
+                    setNotas(notasObj)
+                }
+            } catch (error) {
+                console.error("Erro ao carregar dados", error)
             }
         }
+        fetchData()
     }, [id])
 
     const handleNotaChange = (alunoId, valor) => {
@@ -83,7 +101,7 @@ function AvaliacaoGrupo() {
         setNotas(prev => ({ ...prev, [alunoId]: parsed }))
     }
 
-    const handleSalvar = () => {
+    const handleSalvar = async () => {
         // Validar notas
         const erros = {}
         alunosDoGrupo.forEach(aluno => {
@@ -97,36 +115,47 @@ function AvaliacaoGrupo() {
             return
         }
 
-        const storedGrupos = localStorage.getItem("grupos_mock")
-        let gruposMock = storedGrupos ? JSON.parse(storedGrupos) : []
-        const index = gruposMock.findIndex(g => g.id.toString() === id)
+        try {
+            const notasArray = Object.keys(notas).map(alunoId => ({
+                aluno: parseInt(alunoId, 10),
+                nota: String(notas[alunoId])
+            })).filter(n => n.nota && n.nota !== "undefined")
 
-        if (index !== -1) {
-            // Determina o novo status
-            const todosOsAlunos = gruposMock[index].alunos || []
+            const payloadEntrega = {
+                grupo: parseInt(id, 10),
+                dataEntrega: new Date().toISOString().split('T')[0],
+                apresentado: true,
+                dataApresentacao: dataApresentacao || null,
+                comentarioGeral: comentarioGeral,
+                notas: notasArray
+            }
+
+            if (entregaId) {
+                await atualizarEntrega(entregaId, payloadEntrega)
+            } else {
+                await criarEntrega(payloadEntrega)
+            }
+
+            const todosOsAlunos = grupo.alunos || []
             const todasNotasPreenchidas = todosOsAlunos.length > 0 && todosOsAlunos.every(entry => {
                 const alunoId = getAlunoId(entry)
                 const nota = notas[alunoId] !== undefined ? notas[alunoId] : notas[String(alunoId)]
                 return nota !== undefined && nota !== "" && nota !== null
             })
+
             const novoStatus = todasNotasPreenchidas ? "Concluído" : "Em andamento"
-
-            gruposMock[index] = {
-                ...gruposMock[index],
-                dataApresentacao,
-                comentarioGeral,
-                notas,
-                status: novoStatus
+            if (grupo.status !== novoStatus) {
+                await atualizarGrupo(id, { ...grupo, status: novoStatus })
             }
-            localStorage.setItem("grupos_mock", JSON.stringify(gruposMock))
+
+            setSuccessMsg(`Avaliação do grupo "${grupo?.nome}" salva com sucesso!`)
+            setTimeout(() => {
+                navigate("/entregas")
+            }, 1200)
+        } catch (error) {
+            console.error("Erro ao salvar avaliação:", error)
+            alert("Erro ao salvar a avaliação. Verifique o console para mais detalhes.")
         }
-
-        setSuccessMsg(`Avaliação do grupo "${grupo?.nome}" salva com sucesso!`)
-
-        // Voltar para a lista preservando os filtros via sessionStorage
-        setTimeout(() => {
-            navigate("/entregas")
-        }, 1200)
     }
 
     const handleVoltar = () => {
@@ -214,7 +243,7 @@ function AvaliacaoGrupo() {
                                 <h2 className="text-xl font-bold text-[#006b64] mb-2">{grupo.nome}</h2>
                                 <div className="flex flex-wrap items-center gap-2 text-xs">
                                     <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">
-                                        <Hash size={12} /> {grupo.codigo}
+                                        <Hash size={12} /> {grupo.id}
                                     </span>
                                     <span className={`inline-flex items-center gap-1.5 ${mvpColor.bg} ${mvpColor.text} border ${mvpColor.border} px-2 py-1 rounded font-medium`}>
                                         <span className={`w-2 h-2 rounded-full ${mvpColor.dot}`}></span>
@@ -231,7 +260,7 @@ function AvaliacaoGrupo() {
                                 {grupo.projeto ? (
                                     <div className="flex items-center gap-1.5 text-gray-700 bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-100 font-medium text-xs">
                                         <FolderOpen size={14} className="text-teal-600" />
-                                        {grupo.projeto}
+                                        {grupo.projeto?.nome || "Projeto"}
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 font-medium text-xs">
