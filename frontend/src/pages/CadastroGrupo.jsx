@@ -20,6 +20,8 @@ import {
 } from "lucide-react"
 import api from "../services/api"
 import { buscarGrupo, criarGrupo, atualizarGrupo, listarAlunosDoGrupo, vincularAlunoAoGrupo, desvincularAlunoDoGrupo, listarGrupos } from "../services/grupoService"
+import { listarProjetos, vincularProjetoAoGrupo, desvincularProjetoDoGrupo } from "../services/projetoService"
+
 
 function CadastroGrupo() {
     const navigate = useNavigate()
@@ -48,6 +50,8 @@ function CadastroGrupo() {
     const [successMsg, setSuccessMsg] = useState("")
     const [initialAlunos, setInitialAlunos] = useState([])
     const [proximoId, setProximoId] = useState(1)
+    const [projetoSelecionado, setProjetoSelecionado] = useState(null)
+    const [initialProjeto, setInitialProjeto] = useState(null)
 
     useEffect(() => {
         const fetchAlunos = async () => {
@@ -78,29 +82,15 @@ function CadastroGrupo() {
             fetchProximoId();
         }
 
-        const staticProjetos = [
-            "Sistema de Gestão Acadêmica",
-            "E-commerce MVP",
-            "App de Delivery",
-            "Plataforma de Ensino Online",
-            "Sistema de Agendamento Médico",
-            "App de Controle Financeiro",
-            "Rede Social para Estudantes",
-            "Sistema de Biblioteca Digital",
-            "App de Monitoramento de Saúde",
-            "Plataforma de Freelancers",
-            "Sistema de Gestão de Projetos",
-            "App de Receitas Culinárias"
-        ]
-
-        const storedProjetos = localStorage.getItem("projetos_mock")
-        if (storedProjetos) {
-            const userProjetos = JSON.parse(storedProjetos).map(p => p.nome)
-            const merged = Array.from(new Set([...userProjetos, ...staticProjetos]))
-            setProjetos(merged)
-        } else {
-            setProjetos(staticProjetos)
-        }
+        const fetchProjetos = async () => {
+            try {
+                const todos = await listarProjetos();
+                setProjetos(todos);
+            } catch (error) {
+                console.error("Erro ao buscar projetos", error);
+            }
+        };
+        fetchProjetos();
 
         if (isEdit) {
             const fetchGrupo = async () => {
@@ -126,6 +116,10 @@ function CadastroGrupo() {
                             status: grupoEdit.status || "Em andamento"
                         })
                         setInitialAlunos(selectedAlunosIds)
+                        if (grupoEdit.projeto) {
+                            setProjetoSelecionado(grupoEdit.projeto)
+                            setInitialProjeto(grupoEdit.projeto)
+                        }
                     }
                 } catch (error) {
                     console.error("Erro ao buscar grupo para edição:", error)
@@ -230,6 +224,14 @@ function CadastroGrupo() {
                 ...aDesvincular.map(alunoId => desvincularAlunoDoGrupo(alunoId, grupoId))
             ]
 
+            if (projetoSelecionado?.id !== initialProjeto?.id) {
+                if (projetoSelecionado) {
+                    promises.push(vincularProjetoAoGrupo(grupoId, projetoSelecionado.id))
+                } else if (initialProjeto) {
+                    promises.push(desvincularProjetoDoGrupo(grupoId))
+                }
+            }
+
             await Promise.all(promises)
 
             setTimeout(() => {
@@ -274,9 +276,11 @@ function CadastroGrupo() {
         a.matricula.includes(buscaAluno)
     )
 
-    const projetosFiltrados = projetos.filter((p) =>
-        p.toLowerCase().includes(buscaProjeto.toLowerCase())
-    )
+    const projetosFiltrados = projetos
+        .filter(p => p.status === "Ativo" || p.id === initialProjeto?.id)
+        .filter((p) =>
+            p.nome?.toLowerCase().includes(buscaProjeto.toLowerCase())
+        )
 
     return (
         <section className="min-h-screen bg-gray-50 flex flex-col">
@@ -339,13 +343,13 @@ function CadastroGrupo() {
                                 </div>
                                 {isEdit && (
                                     <div className="space-y-1">
-                                        <label className="block text-sm font-semibold text-gray-700">Código da Equipe</label>
+                                        <label className="block text-sm font-semibold text-gray-700">ID da Equipe</label>
                                         <div className="relative">
                                             <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                                             <input
                                                 type="text"
                                                 readOnly
-                                                value={formData.codigo}
+                                                value={id}
                                                 className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 outline-none bg-gray-50 text-gray-500 cursor-not-allowed"
                                             />
                                         </div>
@@ -505,8 +509,8 @@ function CadastroGrupo() {
                                         <div className="p-3 border-r border-gray-100">
                                             <FolderOpen className="text-gray-400" size={16} />
                                         </div>
-                                        <span className={`flex-1 px-4 py-2.5 text-sm ${formData.projeto ? "text-gray-800 font-medium" : "text-gray-400"}`}>
-                                            {formData.projeto || "Selecione um projeto..."}
+                                        <span className={`flex-1 px-4 py-2.5 text-sm ${projetoSelecionado ? "text-gray-800 font-medium" : "text-gray-400"}`}>
+                                            {projetoSelecionado ? projetoSelecionado.nome : "Selecione um projeto..."}
                                         </span>
                                         <ChevronDown size={16} className={`mr-4 text-gray-400 transition-transform ${dropdownAberto ? "rotate-180" : ""}`} />
                                     </button>
@@ -527,11 +531,11 @@ function CadastroGrupo() {
                                                 </div>
                                             </div>
                                             <div className="max-h-60 overflow-y-auto">
-                                                {formData.projeto && (
+                                                {projetoSelecionado && (
                                                     <button
                                                         type="button"
                                                         onClick={() => {
-                                                            setFormData(prev => ({ ...prev, projeto: "" }))
+                                                            setProjetoSelecionado(null)
                                                             setDropdownAberto(false)
                                                         }}
                                                         className="w-full text-left px-4 py-2.5 text-xs text-red-500 hover:bg-red-50 transition-colors border-b border-gray-50 font-bold uppercase tracking-wider"
@@ -544,17 +548,17 @@ function CadastroGrupo() {
                                                 ) : (
                                                     projetosFiltrados.map((projeto) => (
                                                         <button
-                                                            key={projeto}
+                                                            key={projeto.id}
                                                             type="button"
                                                             onClick={() => {
-                                                                setFormData(prev => ({ ...prev, projeto }))
+                                                                setProjetoSelecionado(projeto)
                                                                 setDropdownAberto(false)
                                                                 setBuscaProjeto("")
                                                             }}
-                                                            className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-50 transition-all flex items-center justify-between ${formData.projeto === projeto ? "bg-[#006b64]/5 text-[#006b64] font-bold" : "text-gray-700"}`}
+                                                            className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-50 transition-all flex items-center justify-between ${projetoSelecionado?.id === projeto.id ? "bg-[#006b64]/5 text-[#006b64] font-bold" : "text-gray-700"}`}
                                                         >
-                                                            <span>{projeto}</span>
-                                                            {formData.projeto === projeto && <CheckCircle size={14} />}
+                                                            <span>{projeto.nome}</span>
+                                                            {projetoSelecionado?.id === projeto.id && <CheckCircle size={14} />}
                                                         </button>
                                                     ))
                                                 )}
@@ -579,7 +583,7 @@ function CadastroGrupo() {
                                     {errors.githubUrl && <p className="text-xs text-red-500 font-medium">{errors.githubUrl}</p>}
                                 </div>
 
-                                {formData.projeto && (
+                                {projetoSelecionado && (
                                     <div className="space-y-1">
                                         <label className="block text-sm font-semibold text-gray-700">Status do Projeto</label>
                                         <div className="relative">
