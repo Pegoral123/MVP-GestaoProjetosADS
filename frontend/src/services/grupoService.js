@@ -1,6 +1,5 @@
 import api from './api';
 
-// converte snake_case para camelCase
 function adaptarGrupo(grupo) {
     return {
         ...grupo,
@@ -12,7 +11,6 @@ function adaptarGrupo(grupo) {
     };
 }
 
-// converte camelCase para snake_case
 function prepararPayload(data) {
     const payload = {
         nome: data.nome,

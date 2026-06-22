@@ -15,21 +15,20 @@ import {
     X
 } from "lucide-react"
 import { Button } from "../components/ui/button"
-import api from "../services/api"
+
+
+import { listarGrupos } from "../services/grupoService"
 
 function RegistroEntregas() {
     const navigate = useNavigate()
     const [grupos, setGrupos] = useState([])
-    const [alunos, setAlunos] = useState([])
-
-    // Filtros preservados em sessionStorage
+    const [loading, setLoading] = useState(true)
     const [filtroMvp, setFiltroMvp] = useState(() => sessionStorage.getItem("entregas_filtroMvp") || "")
     const [filtroAno, setFiltroAno] = useState(() => sessionStorage.getItem("entregas_filtroAno") || "")
     const [filtroPeriodo, setFiltroPeriodo] = useState(() => sessionStorage.getItem("entregas_filtroPeriodo") || "")
     const [filtroStatus, setFiltroStatus] = useState(() => sessionStorage.getItem("entregas_filtroStatus") || "")
     const [busca, setBusca] = useState(() => sessionStorage.getItem("entregas_busca") || "")
 
-    // Sincronizar filtros com sessionStorage
     useEffect(() => { sessionStorage.setItem("entregas_filtroMvp", filtroMvp) }, [filtroMvp])
     useEffect(() => { sessionStorage.setItem("entregas_filtroAno", filtroAno) }, [filtroAno])
     useEffect(() => { sessionStorage.setItem("entregas_filtroPeriodo", filtroPeriodo) }, [filtroPeriodo])
@@ -37,36 +36,24 @@ function RegistroEntregas() {
     useEffect(() => { sessionStorage.setItem("entregas_busca", busca) }, [busca])
 
     useEffect(() => {
-        const fetchAlunos = async () => {
+        const fetchData = async () => {
             try {
-                const res = await api.get('/api/v1/alunos/')
-                let data = []
-                if (Array.isArray(res.data)) data = res.data
-                else if (res.data?.results) data = res.data.results
-                else if (res.data?.data) data = res.data.data
-                else if (res.data?.alunos) data = res.data.alunos
-                setAlunos(data)
+                const gruposData = await listarGrupos()
+                setGrupos(gruposData)
             } catch (error) {
-                console.error("Erro ao buscar alunos", error)
+                console.error("Erro ao buscar dados", error)
+            } finally {
+                setLoading(false)
             }
         }
-        fetchAlunos()
-
-        const storedGrupos = localStorage.getItem("grupos_mock")
-        if (storedGrupos) {
-            setGrupos(JSON.parse(storedGrupos))
-        }
+        fetchData()
     }, [])
 
     const gruposFiltrados = grupos.filter((g) => {
         const matchMvp = filtroMvp ? g.mvp === filtroMvp : true
         const matchAno = filtroAno ? g.ano === filtroAno : true
         const matchPeriodo = filtroPeriodo ? g.periodo === filtroPeriodo : true
-        const matchBusca = busca
-            ? g.nome?.toLowerCase().includes(busca.toLowerCase())
-            : true
-
-        // Status do grupo
+        const matchBusca = busca ? g.nome?.toLowerCase().includes(busca.toLowerCase()) : true
         let matchStatus = true
         if (filtroStatus === "Concluído") {
             matchStatus = g.status === "Concluído"
@@ -224,7 +211,12 @@ function RegistroEntregas() {
                 </div>
 
                 {/* Listagem de Grupos */}
-                {!hasActiveFilters ? (
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-gray-400 bg-white rounded-xl border border-gray-100 shadow-sm">
+                        <Layers size={48} className="mb-3 opacity-40 text-[#006b64] animate-pulse" />
+                        <p className="text-base font-medium">Carregando grupos...</p>
+                    </div>
+                ) : !hasActiveFilters ? (
                     <div className="flex flex-col items-center justify-center py-20 text-gray-400 bg-white rounded-xl border border-gray-100 shadow-sm">
                         <Filter size={48} className="mb-3 opacity-30 text-[#006b64]" />
                         <p className="text-base font-semibold text-gray-500">Selecione ao menos um filtro para visualizar os grupos.</p>
@@ -246,7 +238,7 @@ function RegistroEntregas() {
                         {gruposFiltrados.map(grupo => {
                             const avaliado = grupo.status === "Concluído"
                             const mvpColor = getMvpColor(grupo.mvp)
-                            const qtdAlunos = grupo.alunos?.length || 0
+                            const qtdAlunos = grupo.alunos?.length || grupo.totalAlunos || 0
 
                             return (
                                 <div
@@ -281,7 +273,7 @@ function RegistroEntregas() {
                                             <div className="flex flex-wrap items-center gap-2 text-xs">
                                                 <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">
                                                     <Hash size={12} />
-                                                    {grupo.codigo}
+                                                    {grupo.id}
                                                 </span>
                                                 <span className={`inline-flex items-center gap-1.5 ${mvpColor.bg} ${mvpColor.text} border ${mvpColor.border} px-2 py-1 rounded font-medium`}>
                                                     <span className={`w-2 h-2 rounded-full ${mvpColor.dot}`}></span>
@@ -294,7 +286,7 @@ function RegistroEntregas() {
                                                 {grupo.projeto && (
                                                     <span className="inline-flex items-center gap-1 bg-teal-50 text-teal-700 border border-teal-200 px-2 py-1 rounded font-medium">
                                                         <FolderOpen size={12} />
-                                                        {grupo.projeto}
+                                                        {grupo.projeto?.nome || "Projeto"}
                                                     </span>
                                                 )}
                                                 <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">
@@ -309,8 +301,8 @@ function RegistroEntregas() {
                                             <Button
                                                 onClick={() => navigate(`/entregas/avaliar/${grupo.id}`)}
                                                 className={`px-5 py-2 text-sm font-semibold shadow-sm transition-transform hover:scale-105 ${avaliado
-                                                        ? 'bg-[#006b64] hover:bg-[#00524d] text-white'
-                                                        : 'bg-[#E05B14] hover:bg-[#c44e10] text-white'
+                                                    ? 'bg-[#006b64] hover:bg-[#00524d] text-white'
+                                                    : 'bg-[#E05B14] hover:bg-[#c44e10] text-white'
                                                     }`}
                                             >
                                                 <ClipboardCheck size={16} className="mr-1.5" />

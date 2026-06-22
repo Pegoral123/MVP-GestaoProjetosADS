@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom"
 import { ArrowLeft, Users, Plus, Search, Calendar, Layers, Hash, FolderX, LogOut, User, LayoutGrid, Clock, CheckCircle, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "../components/ui/button"
 import GrupoModal from "../components/grupos/GrupoModal"
+import SectionList from "../components/grupos/SectionList"
+import SearchInput from "../components/comum/SearchInput"
 import { useAuth } from "../context/AuthContext"
 import { listarGrupos, deletarGrupo, atualizarGrupo } from "../services/grupoService"
 
@@ -68,7 +70,7 @@ function ListaGrupos() {
         const matchPeriodo = filtroPeriodo ? g.periodo === filtroPeriodo : true
         const matchData = filtroData ? g.data === filtroData : true
         const matchBusca = busca
-            ? (g.nome?.toLowerCase().includes(busca.toLowerCase()) || g.codigo?.toLowerCase().includes(busca.toLowerCase()))
+            ? (g.nome?.toLowerCase().includes(busca.toLowerCase()) || g.id?.toString().includes(busca))
             : true
         const matchSemProjeto = filtroSemProjeto ? !g.projeto : true
 
@@ -78,97 +80,6 @@ function ListaGrupos() {
     const frontendGrupos = gruposFiltrados.filter(g => g.mvp === "Frontend")
     const backendGrupos = gruposFiltrados.filter(g => g.mvp === "Backend")
     const mobileGrupos = gruposFiltrados.filter(g => g.mvp === "Mobile")
-
-    const GrupoCard = ({ grupo }) => (
-        <div
-            onClick={() => setGrupoSelecionado(grupo)}
-            className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-3 group relative overflow-hidden"
-        >
-            <div className="absolute top-0 left-0 w-1 h-full bg-[#006b64] group-hover:w-2 transition-all"></div>
-
-            <div className="flex justify-between items-start pl-2">
-                <div>
-                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        {grupo.nome}
-                    </h3>
-                    <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
-                        <Hash size={14} />
-                        <span>{grupo.codigo}</span>
-                    </div>
-                </div>
-                {/* Tag Sem projeto */}
-                {!grupo.projeto && (
-                    <div className="bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full text-xs font-semibold text-amber-700 flex items-center gap-1">
-                        <FolderX size={12} />
-                        Sem projeto
-                    </div>
-                )}
-            </div>
-
-            <div className="pl-2 flex flex-wrap gap-2 text-xs mt-2">
-                <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded flex items-center gap-1">
-                    <Calendar size={12} /> {grupo.ano || (grupo.data ? new Date(grupo.data).getFullYear() : '')} - {grupo.periodo}
-                </span>
-                <span className="bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded flex items-center gap-1">
-                    <Layers size={12} /> {grupo.data}
-                </span>
-                <span className="bg-gray-100 px-2 py-1 rounded text-gray-600 font-semibold flex items-center gap-1">
-                    <Users size={12} />
-                    {grupo.totalAlunos ?? grupo.total_alunos ?? 0} alunos
-                </span>
-            </div>
-
-            {/* Status do Projeto */}
-            {grupo.projeto && (
-                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between pl-2">
-                    <div className="flex items-center gap-2 text-[11px] text-gray-500 font-bold uppercase tracking-wider">
-                        {grupo.status === 'Concluído' ? (
-                            <div className="bg-green-100 p-1 rounded-full text-green-600">
-                                <CheckCircle size={12} />
-                            </div>
-                        ) : (
-                            <div className="bg-blue-100 p-1 rounded-full text-blue-600 animate-pulse">
-                                <Clock size={12} />
-                            </div>
-                        )}
-                        Status:
-                    </div>
-                    <select
-                        value={grupo.status || "Em andamento"}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => handleStatusChange(grupo.id, e.target.value)}
-                        className={`text-xs font-bold py-1.5 px-3 rounded-lg border outline-none transition-all cursor-pointer shadow-sm ${grupo.status === "Concluído"
-                            ? "bg-green-50 border-green-200 text-green-700 focus:ring-2 focus:ring-green-500/20"
-                            : "bg-blue-50 border-blue-200 text-blue-700 focus:ring-2 focus:ring-blue-500/20"
-                            }`}
-                    >
-                        <option value="Em andamento">Em andamento</option>
-                        <option value="Concluído">Concluído</option>
-                    </select>
-                </div>
-            )}
-        </div>
-    )
-
-    const SectionList = ({ title, items, icon }) => (
-        <div className="mb-10">
-            <div className="flex items-center gap-2 border-b border-gray-200 pb-2 mb-4">
-                {icon}
-                <h2 className="text-xl font-bold text-gray-700">{title}</h2>
-                <span className="bg-gray-200 text-gray-700 text-xs font-bold px-2 py-1 rounded-full ml-2">
-                    {items.length}
-                </span>
-            </div>
-
-            {items.length === 0 ? (
-                <div className="text-gray-400 text-sm italic py-4">Nenhum grupo encontrado nesta categoria.</div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {items.map(g => <GrupoCard key={g.id} grupo={g} />)}
-                </div>
-            )}
-        </div>
-    )
 
     return (
         <section className="min-h-screen bg-gray-50 flex flex-col">
@@ -203,18 +114,11 @@ function ListaGrupos() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30">
-                            <div className="bg-[#006b64] p-2.5">
-                                <Search className="text-white" size={16} />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Buscar por código ou nome..."
-                                value={busca}
-                                onChange={(e) => setBusca(e.target.value)}
-                                className="flex-1 px-3 py-2 text-sm border-0 outline-none focus:ring-0 bg-white w-full"
-                            />
-                        </div>
+                        <SearchInput
+                            value={busca}
+                            onChange={(e) => setBusca(e.target.value)}
+                            placeholder="Buscar por ID ou nome..."
+                        />
 
                         <select
                             value={filtroAno}
@@ -306,16 +210,22 @@ function ListaGrupos() {
                             title="MVP Frontend"
                             items={frontendGrupos}
                             icon={<div className="w-3 h-3 rounded-full bg-blue-500"></div>}
+                            onCardClick={setGrupoSelecionado}
+                            onStatusChange={handleStatusChange}
                         />
                         <SectionList
                             title="MVP Backend"
                             items={backendGrupos}
                             icon={<div className="w-3 h-3 rounded-full bg-green-500"></div>}
+                            onCardClick={setGrupoSelecionado}
+                            onStatusChange={handleStatusChange}
                         />
                         <SectionList
                             title="MVP Mobile"
                             items={mobileGrupos}
                             icon={<div className="w-3 h-3 rounded-full bg-purple-500"></div>}
+                            onCardClick={setGrupoSelecionado}
+                            onStatusChange={handleStatusChange}
                         />
                     </div>
                 )}

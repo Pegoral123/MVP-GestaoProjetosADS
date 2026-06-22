@@ -191,7 +191,7 @@ class ProjetoAlterarStatusView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses=ProjetoSerializer)
+    @extend_schema( request=serializers.Serializer, responses={200: ProjetoSerializer},)
     def patch(self, request, pk):
         projeto = ProjetoService.buscar_por_id(pk)
         novo_status = request.data.get("status")

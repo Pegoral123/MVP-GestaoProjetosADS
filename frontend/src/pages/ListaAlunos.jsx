@@ -5,8 +5,8 @@ import { Button } from "../components/ui/button"
 import AlunoCard from "../components/alunos/AlunoCard"
 import AlunoModal from "../components/alunos/AlunoModal"
 import { useAuth } from "../context/AuthContext"
-
-import api from "../services/api"
+import SearchInput from "../components/comum/SearchInput"
+import { listarAlunos, deletarAluno } from "../services/alunoService"
 
 function ListaAlunos() {
     const navigate = useNavigate()
@@ -19,17 +19,7 @@ function ListaAlunos() {
 
     const carregarAlunos = async () => {
         try {
-            const response = await api.get('/alunos/');
-            let data = [];
-            if (Array.isArray(response.data)) {
-                data = response.data;
-            } else if (response.data && Array.isArray(response.data.results)) {
-                data = response.data.results;
-            } else if (response.data && Array.isArray(response.data.data)) {
-                data = response.data.data;
-            } else if (response.data && Array.isArray(response.data.alunos)) {
-                data = response.data.alunos;
-            }
+            const data = await listarAlunos();
             setAlunos(data);
         } catch (error) {
             console.error("Erro ao carregar alunos", error);
@@ -44,7 +34,7 @@ function ListaAlunos() {
 
     const handleDeleteAluno = async (id) => {
         try {
-            await api.delete(`/alunos/${id}/`);
+            await deletarAluno(id);
             setAlunos(alunos.filter((a) => a.id !== id));
             setAlunoSelecionado(null);
         } catch (error) {
@@ -94,16 +84,11 @@ function ListaAlunos() {
                         </Button>
                     </div>
 
-                    <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#006b64]/30 w-full sm:w-80">
-                        <div className="bg-[#006b64] p-2.5">
-                            <Search className="text-white" size={16} />
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Buscar por nome ou matrícula..."
+                    <div className="w-full sm:w-80">
+                        <SearchInput
                             value={busca}
                             onChange={(e) => setBusca(e.target.value)}
-                            className="flex-1 px-3 py-2 text-sm border-0 outline-none focus:ring-0 bg-white w-full"
+                            placeholder="Buscar por nome ou matrícula..."
                         />
                     </div>
                 </div>

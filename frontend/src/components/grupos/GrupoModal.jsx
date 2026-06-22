@@ -83,7 +83,7 @@ function GrupoModal({ grupo, onClose, onDelete }) {
                             <h2 className="text-white font-bold text-lg leading-tight">{grupo.nome}</h2>
                             <div className="flex items-center gap-1 text-white/70 text-xs mt-0.5">
                                 <Hash size={11} />
-                                <span>{grupo.codigo}</span>
+                                <span>{grupo.id}</span>
                             </div>
                         </div>
                     </div>
@@ -198,7 +198,7 @@ function GrupoModal({ grupo, onClose, onDelete }) {
                         </div>
                     )}
 
-                    {/* Seção de Projeto em Condicional */}
+                    {/*Projeto em Condicional */}
                     {temProjeto ? (
                         <div className="flex flex-col gap-3 mt-1">
                             {/* Projeto vinculado */}

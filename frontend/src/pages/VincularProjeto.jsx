@@ -170,8 +170,8 @@ function VincularProjeto() {
                                     <p className="text-gray-800 font-bold">{grupo.nome}</p>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Código</p>
-                                    <p className="text-gray-800 font-bold">{grupo.codigo}</p>
+                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">ID da Equipe</p>
+                                    <p className="text-gray-800 font-bold">{grupo.id}</p>
                                 </div>
                             </div>
                         </div>
