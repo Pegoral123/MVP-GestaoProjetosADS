@@ -34,6 +34,7 @@ function AvaliacaoGrupo() {
     const [comentarioGeral, setComentarioGeral] = useState("")
     const [notas, setNotas] = useState({})
     const [notaErrors, setNotaErrors] = useState({})
+    const [dataApresentacaoError, setDataApresentacaoError] = useState("")
 
     const [successMsg, setSuccessMsg] = useState("")
     const [entregaId, setEntregaId] = useState(null)
@@ -102,7 +103,12 @@ function AvaliacaoGrupo() {
     }
 
     const handleSalvar = async () => {
-        // Validar notas
+        if (!dataApresentacao) {
+            setDataApresentacaoError("A data de apresentação é obrigatória.")
+            return
+        }
+        setDataApresentacaoError("")
+
         const erros = {}
         alunosDoGrupo.forEach(aluno => {
             const nota = notas[aluno.id]
@@ -299,10 +305,21 @@ function AvaliacaoGrupo() {
                                 <input
                                     type="date"
                                     value={dataApresentacao}
-                                    onChange={(e) => setDataApresentacao(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-[#006b64]/20 focus:border-[#006b64] transition-all"
+                                    onChange={(e) => {
+                                        setDataApresentacao(e.target.value)
+                                        if (e.target.value) setDataApresentacaoError("")
+                                    }}
+                                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border outline-none focus:ring-2 focus:ring-[#006b64]/20 transition-all ${dataApresentacaoError
+                                            ? "border-red-400 focus:border-red-400"
+                                            : "border-gray-300 focus:border-[#006b64]"
+                                        }`}
                                 />
                             </div>
+                            {dataApresentacaoError && (
+                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                    <AlertCircle size={12} /> {dataApresentacaoError}
+                                </p>
+                            )}
                         </div>
 
                         {/* Comentário Geral */}
