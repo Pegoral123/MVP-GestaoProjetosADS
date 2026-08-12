@@ -158,4 +158,4 @@ Projeto desenvolvido exclusivamente para fins acadêmicos — UNIFESO, 2026.
 - Jhonathan Pegoral
 
 ---
-*Projeto em desenvolvimento ativo*
+*Projeto Finalizado*
