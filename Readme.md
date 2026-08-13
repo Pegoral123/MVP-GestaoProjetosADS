@@ -75,7 +75,7 @@ View → Serializer → Service → ORM → Banco de Dados
 
 - **5 módulos** completos: Auth, Alunos, Grupos, Projetos e Entregas
 - **40 endpoints** em produção
-- **40+ testes automatizados** com pytest-django, todos passando ✅
+- **100+ testes automatizados** com pytest-django, todos passando ✅
 - **Git Flow** com PRs revisados antes de cada merge
 - Deploy contínuo integrado ao GitHub
 
